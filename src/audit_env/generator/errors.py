@@ -9,12 +9,12 @@ from __future__ import annotations
 
 import random
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from .. import jsonutil, money
 from ..config import ERROR_TYPES
 from ..ids import IdFactory
-from ..timeutil import fmt_ts
+from ..timeutil import fmt_ts, local_date, offset_minutes
 from .company import Company
 
 
@@ -158,6 +158,141 @@ class _Injector:
                 "after": jsonutil.deep_copy(new_refs),
                 "reason": "receipt not (fully) applied to the invoices it settles: the unapplied "
                           "remainder sits on UNAPPLIED_CASH while the invoices stay open in AR",
+            })
+            return True
+        return False
+
+
+    # ---- fx_error ---------------------------------------------------------
+    def fx_error(self) -> bool:
+        """Post a foreign-currency document with the rate of a wrong date."""
+        c, rng = self.c, self.rng
+        touched = set(self._payments_by_invoice())
+        fx_id = {(r["source_currency"], r["date"]): r["fx_id"] for r in c.fx_rows}
+        cands: list[tuple[str, dict]] = []
+        for inv in sorted(c.invoices, key=lambda i: i["invoice_id"]):
+            if inv["currency"] != c.base_currency and inv["invoice_id"] not in self.inj.locked | touched:
+                cands.append(("invoice", inv))
+        for pay in sorted(c.payments, key=lambda p: p["payment_id"]):
+            refs = {r["invoice_id"] for r in pay["invoice_refs"] or []}
+            if (pay["kind"] == "receipt" and pay["currency"] != c.base_currency and refs
+                    and pay["payment_id"] not in self.inj.locked and not refs & self.inj.locked):
+                cands.append(("payment", pay))
+        rng.shuffle(cands)
+        for kind, doc in cands:
+            ts = datetime.fromisoformat(doc["issued_at"] if kind == "invoice" else doc["timestamp"])
+            amount_doc = doc["total_minor"] if kind == "invoice" else doc["amount_minor"]
+            cur = doc["currency"]
+            day = local_date(ts, c.offset)
+            variants = []
+            utc_day = ts.astimezone(timezone.utc).date()
+            if utc_day != day:
+                variants.append(("utc_date_instead_of_company_date", utc_day))
+            variants += [("previous_day", day - timedelta(days=1)), ("next_day", day + timedelta(days=1)),
+                         ("week_old_rate", day - timedelta(days=7))]
+            rng.shuffle(variants)
+            for variant, wrong_day in variants:
+                if (cur, wrong_day.isoformat()) not in c.rates:
+                    continue
+                right = money.convert(amount_doc, cur, c.base_currency, c.rate(cur, day))
+                wrong = money.convert(amount_doc, cur, c.base_currency, c.rate(cur, wrong_day))
+                if wrong == right:
+                    continue
+                doc_key = "invoice_id" if kind == "invoice" else "payment_id"
+                self.inj.overrides[doc["doc_id"]] = {"rate_date": wrong_day.isoformat()}
+                self.inj.locked.add(doc[doc_key])
+                if kind == "payment":
+                    self.inj.locked |= {r["invoice_id"] for r in doc["invoice_refs"]}
+                self.inj.issues.append({
+                    "type": "fx_error",
+                    "affected_ids": [doc[doc_key]],
+                    "expected_amount_minor": abs(wrong - right),
+                    "currency": c.base_currency,
+                    "acceptable_evidence_sets": [sorted([doc["doc_id"], fx_id[(cur, day.isoformat())],
+                                                         c.txn_of[doc["doc_id"]]])],
+                })
+                self.inj.changes.append({
+                    "type": "fx_error",
+                    "affected_ids": [doc[doc_key]],
+                    "action": "override_posting",
+                    "variant": variant,
+                    "target_doc_id": doc["doc_id"],
+                    "field": "rate_date",
+                    "before": day.isoformat(),
+                    "after": wrong_day.isoformat(),
+                    "posted_minor": {"before": right, "after": wrong},
+                    "reason": "document converted with the fx.csv rate of a date other than the "
+                              "operation date in the company timezone",
+                })
+                return True
+        return False
+
+    # ---- period_cutoff ----------------------------------------------------
+    def period_cutoff(self) -> bool:
+        """A next-period operation (document dated after period end) posted in this period."""
+        c, rng = self.c, self.rng
+        by_inv: dict[str, list[dict]] = {}
+        for p in c.payments:
+            for ref in p["invoice_refs"] or []:
+                by_inv.setdefault(ref["invoice_id"], []).append(p)
+        cands: list[tuple[str, dict]] = []
+        for inv in sorted(c.invoices, key=lambda i: i["invoice_id"]):
+            if inv["invoice_id"] not in self.inj.locked and inv["invoice_id"] not in by_inv:
+                cands.append(("invoice", inv))
+        for pay in sorted(c.payments, key=lambda p: p["payment_id"]):
+            refs = {r["invoice_id"] for r in pay["invoice_refs"] or []}
+            if pay["kind"] != "receipt" or not refs or pay["payment_id"] in self.inj.locked or refs & self.inj.locked:
+                continue
+            related = [q for i in sorted(refs) for q in by_inv[i]]
+            ts = datetime.fromisoformat(pay["timestamp"])
+            if any(q["kind"] == "refund" for q in related):
+                continue
+            if any(datetime.fromisoformat(q["timestamp"]) > ts for q in related):
+                continue  # must stay the latest settlement of its invoices
+            cands.append(("payment", pay))
+        rng.shuffle(cands)
+        for kind, doc in cands:
+            field_name = "issued_at" if kind == "invoice" else "timestamp"
+            old_text = doc[field_name]
+            display_offset = old_text[-6:]
+            new_ts = c.period_end + timedelta(seconds=rng.randint(60, 30 * 3600))
+            gap = (offset_minutes(c.offset) - offset_minutes(display_offset)) * 60
+            if gap > 600 and rng.random() < 0.6:
+                # timezone trap: in the document's own offset the date still reads as the
+                # last day of the period, but the instant is after the period end
+                new_ts = c.period_end + timedelta(seconds=rng.randint(60, gap - 60))
+            posting_ts = c.period_end - timedelta(seconds=rng.randint(1, 6 * 3600))
+            before = jsonutil.deep_copy(doc)
+            doc[field_name] = fmt_ts(new_ts, display_offset)
+            if kind == "invoice":
+                terms = datetime.fromisoformat(before["due_at"]) - datetime.fromisoformat(old_text)
+                doc["due_at"] = fmt_ts(new_ts + terms, c.offset)
+            doc_key = "invoice_id" if kind == "invoice" else "payment_id"
+            amount_doc = doc["total_minor"] if kind == "invoice" else doc["amount_minor"]
+            self.inj.overrides[doc["doc_id"]] = {"posting_ts": fmt_ts(posting_ts, c.offset)}
+            self.inj.locked.add(doc[doc_key])
+            if kind == "payment":
+                self.inj.locked |= {r["invoice_id"] for r in doc["invoice_refs"]}
+            reads = "reads_in_period" if doc[field_name][:10] < c.period_end.date().isoformat() else "reads_next_period"
+            self.inj.issues.append({
+                "type": "period_cutoff",
+                "affected_ids": [doc[doc_key]],
+                "expected_amount_minor": self._base_amount(amount_doc, doc["currency"], new_ts),
+                "currency": c.base_currency,
+                "acceptable_evidence_sets": [sorted([doc["doc_id"], c.txn_of[doc["doc_id"]]])],
+            })
+            self.inj.changes.append({
+                "type": "period_cutoff",
+                "affected_ids": [doc[doc_key]],
+                "action": "modify_document+override_posting",
+                "variant": reads,
+                "target_doc_id": doc["doc_id"],
+                "field": field_name,
+                "before": before,
+                "after": jsonutil.deep_copy(doc),
+                "posting_ts": fmt_ts(posting_ts, c.offset),
+                "reason": "operation dated after the period end (instant comparison, company "
+                          "timezone) but posted inside the period",
             })
             return True
         return False

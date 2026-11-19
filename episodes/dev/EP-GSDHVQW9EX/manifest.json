@@ -1,0 +1,27 @@
+{
+  "base_currency": "EUR",
+  "currency_exponents": {
+    "EUR": 2,
+    "GBP": 2,
+    "JPY": 0,
+    "KWD": 3,
+    "KZT": 2,
+    "USD": 2
+  },
+  "document_count": 88,
+  "episode_id": "EP-GSDHVQW9EX",
+  "period_end": "2026-02-01T00:00:00-05:00",
+  "period_start": "2026-01-01T00:00:00-05:00",
+  "record_counts": {
+    "fx": 45,
+    "invoices": 44,
+    "ledger": 604,
+    "payments": 44
+  },
+  "rounding_rules": {
+    "fx_rate_format": "decimal string",
+    "mode": "ROUND_HALF_UP"
+  },
+  "schema_version": "1.0",
+  "timezone": "-05:00"
+}

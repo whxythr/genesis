@@ -1,0 +1,36 @@
+{
+  "episode_id": "EP-S9ART65XMS",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-6R9CRJY8",
+          "T-V757NM6Y"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-5P22DQTQ"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 16804,
+      "issue_id": "ISS-01",
+      "type": "unapplied_payment"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-FQKYWJ6F",
+          "T-M747RNP9"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-CPK673A9"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 13276,
+      "issue_id": "ISS-02",
+      "type": "unapplied_payment"
+    }
+  ],
+  "schema_version": "1.0"
+}

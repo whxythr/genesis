@@ -17,8 +17,8 @@
   "errors": {
     "duplicate_invoice": {"enabled": true, "count": [0, 2]},
     "unapplied_payment": {"enabled": true, "count": [0, 2]},
-    "fx_error": {"enabled": false, "count": [0, 2]},
-    "period_cutoff": {"enabled": false, "count": [0, 2]}
+    "fx_error": {"enabled": true, "count": [0, 2]},
+    "period_cutoff": {"enabled": true, "count": [0, 2]}
   },
   "scenarios": {
     "partial_fx_payment_at_cutoff": {"enabled": false, "probability": 0.0},

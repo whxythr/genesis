@@ -1,0 +1,49 @@
+{
+  "documents": {
+    "duplicate_rule": "two invoices with the same entity_id, currency, total_minor and identical line_items are duplicates; the one issued later is the duplicate",
+    "invoice_refs": "list of {invoice_id, amount_minor} in payment currency, or null if none"
+  },
+  "fx": {
+    "base_currency": "KZT",
+    "rate_date_rule": "use the fx.csv row whose date equals the calendar date of the document timestamp (invoice issued_at / payment timestamp) in the company timezone",
+    "rate_semantics": "rate = units of target_currency per 1 unit of source_currency",
+    "same_currency": "no conversion, rate 1",
+    "settlement": "AR is relieved at the invoice booking rate on cumulative amounts: relief = convert(applied_after) - convert(applied_before); the remaining difference to CASH is posted to FX_GAIN_LOSS"
+  },
+  "ledger": {
+    "accounts": {
+      "AR": "accounts receivable (per invoice_id)",
+      "BANK_FEES": "bank charges",
+      "CASH": "bank account",
+      "FX_GAIN_LOSS": "realised FX difference on settlement and rounding",
+      "INTEREST_INCOME": "interest received",
+      "OPEX": "operating expenses",
+      "PAYROLL": "salaries",
+      "REFUNDS": "refunds to customers (contra revenue)",
+      "REVENUE": "sales revenue",
+      "UNAPPLIED_CASH": "cash received but not applied to any invoice"
+    },
+    "csv_null": "empty field",
+    "currency": "KZT",
+    "posting": "invoice: Dr AR / Cr REVENUE; receipt: Dr CASH / Cr AR per invoice_ref (+ Cr UNAPPLIED_CASH for any unapplied part, FX_GAIN_LOSS balances); refund: Dr REFUNDS / Cr CASH"
+  },
+  "period": {
+    "end": "2026-06-01T00:00:00+01:00",
+    "rule": "an operation belongs to the period iff start <= timestamp < end, comparing instants; calendar dates are taken in the company timezone",
+    "start": "2026-05-01T00:00:00+01:00",
+    "timezone": "+01:00"
+  },
+  "rounding": {
+    "currency_exponents": {
+      "EUR": 2,
+      "GBP": 2,
+      "JPY": 0,
+      "KWD": 3,
+      "KZT": 2,
+      "USD": 2
+    },
+    "mode": "ROUND_HALF_UP",
+    "unit": "one minor unit of the target currency"
+  },
+  "schema_version": "1.0"
+}

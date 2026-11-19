@@ -69,12 +69,12 @@ def format_table(summaries: list[dict]) -> str:
     for s in summaries:
         by.setdefault(s["policy"], []).append(s)
     cols = ["policy", "episodes", "P", "R", "F1", "reward", "steps", "time_s", "max_time_s"]
-    lines = ["  ".join(f"{c:>10}" for c in cols)]
+    lines = ["  ".join(f"{c:>15}" for c in cols)]
     for name in sorted(by):
         ss = by[name]
         n = len(ss)
         avg = lambda k: sum(s[k] for s in ss) / n  # noqa: E731
         vals = [name, n, avg("precision"), avg("recall"), avg("f1"), avg("reward"), avg("steps"),
                 avg("time_s"), max(s["time_s"] for s in ss)]
-        lines.append("  ".join(f"{v:>10.3f}" if isinstance(v, float) else f"{v:>10}" for v in vals))
+        lines.append("  ".join(f"{v:>15.3f}" if isinstance(v, float) else f"{v:>15}" for v in vals))
     return "\n".join(lines)

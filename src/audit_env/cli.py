@@ -162,7 +162,9 @@ def cmd_check() -> int:
         ok &= sum(s["reward"] for s in flag) / len(flag) <= -0.5
         ok &= all(s["time_s"] <= 60 for s in summaries)
         ok &= all(s.get("invalid_reason") is None for s in oracle)
-    stage("baselines (oracle ~ 1, flag_all low, <=60 s/episode)", ok)
+        mean = {k: sum(s["reward"] for s in v) / len(v) for k, v in by.items()}
+        ok &= mean["reconcile"] > max(mean["random_explorer"], mean["flag_all"])
+    stage("baselines (oracle ~ 1, reconcile > random/flag_all, flag_all low, <=60 s/episode)", ok)
     failed = [n for n, good in steps if not good]
     print("\nCHECK", "PASSED" if not failed else f"FAILED: {failed}")
     return 0 if not failed else 1

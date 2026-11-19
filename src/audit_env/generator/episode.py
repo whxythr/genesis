@@ -9,7 +9,7 @@ from pathlib import Path
 from .. import SCHEMA_VERSION, __version__, jsonutil
 from ..config import config_id, resolve
 from ..ids import ALPHABET, IdFactory
-from . import invariants, writer
+from . import evidence, invariants, writer
 from .company import build_company
 from .errors import inject
 from .posting import post_ledger
@@ -65,7 +65,7 @@ def generate_episode(seed: int, config: dict | None = None) -> Episode:
     bundle = writer.build_bundle(company, ledger)
 
     truth = {"schema_version": SCHEMA_VERSION, "episode_id": episode_id, "issues": inj.issues}
-    problems = invariants.compare_with_truth(bundle, truth)
+    problems = invariants.compare_with_truth(bundle, truth) + evidence.check_sufficiency(bundle, truth)
     if problems:
         raise GenerationError(f"injected data does not match truth (seed={seed}): {problems[:5]}")
     counts = bundle["manifest"]["record_counts"]
@@ -85,7 +85,8 @@ def generate_episode(seed: int, config: dict | None = None) -> Episode:
         "config": cfg,
         "generation": {
             "steps": ["build_company", "post_ledger(clean)", "invariants.check_clean",
-                      "inject", "post_ledger(injected)", "invariants.compare_with_truth"],
+                      "inject", "post_ledger(injected)", "invariants.compare_with_truth",
+                      "evidence.check_sufficiency"],
             "base_currency": company.base_currency,
             "timezone": company.offset,
             "period_start": bundle["manifest"]["period_start"],

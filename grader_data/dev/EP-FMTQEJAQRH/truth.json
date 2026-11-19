@@ -1,0 +1,98 @@
+{
+  "episode_id": "EP-FMTQEJAQRH",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-9L6AHHUB",
+          "FX-93GAVZ3N",
+          "T-2LEU2QYB"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-36YG5P6F"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 592,
+      "issue_id": "ISS-01",
+      "type": "fx_error"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-LL54ABBP",
+          "FX-E7YHYXVH",
+          "T-2PXXEL4J"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-92MANKVZ"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 16,
+      "issue_id": "ISS-02",
+      "type": "fx_error"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-5E44MGRQ",
+          "T-FUQXH5DF"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-KDLRR3FR"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 13414,
+      "issue_id": "ISS-03",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-T4AYK9XY",
+          "T-8CVACVCR"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-RTAKV5JL"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 159757,
+      "issue_id": "ISS-04",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-DDVA74LQ",
+          "T-2QBPCLEU"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-3D927Q4B"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 291876,
+      "issue_id": "ISS-05",
+      "type": "unapplied_payment"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-RXSVX5EH",
+          "T-9MNG4FZN"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-4HSQG4EA"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 7962,
+      "issue_id": "ISS-06",
+      "type": "unapplied_payment"
+    }
+  ],
+  "schema_version": "1.0"
+}
