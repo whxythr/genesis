@@ -1,0 +1,27 @@
+{
+  "config_name": "default",
+  "year": 2026,
+  "base_currencies": ["KZT", "USD", "EUR"],
+  "foreign_currencies": ["USD", "EUR", "JPY", "KWD", "GBP"],
+  "foreign_share": 0.3,
+  "timezones": ["+05:00", "+03:00", "+00:00", "+01:00", "-03:00", "-05:00", "+09:00", "+05:30"],
+  "n_entities": [6, 18],
+  "n_invoices": [20, 55],
+  "n_background_txns": [80, 280],
+  "max_documents": 200,
+  "max_ledger_rows": 2000,
+  "payment_mix": {"unpaid": 0.25, "full": 0.45, "split": 0.15, "combined": 0.15},
+  "distractors": {"subscriptions": [1, 3], "refunds": [0, 3], "boundary_timezone": [0, 2]},
+  "clean_probability": 0.25,
+  "max_errors": 12,
+  "errors": {
+    "duplicate_invoice": {"enabled": true, "count": [0, 2]},
+    "unapplied_payment": {"enabled": true, "count": [0, 2]},
+    "fx_error": {"enabled": false, "count": [0, 2]},
+    "period_cutoff": {"enabled": false, "count": [0, 2]}
+  },
+  "scenarios": {
+    "partial_fx_payment_at_cutoff": {"enabled": false, "probability": 0.0},
+    "partially_paid_duplicate": {"enabled": false, "probability": 0.0}
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "action",
+  "type": "object",
+  "required": ["tool"],
+  "additionalProperties": false,
+  "properties": {
+    "tool": {"type": "string", "enum": ["list_records", "get_record", "get_document", "calculator", "submit"]},
+    "args": {"type": "object"}
+  },
+  "x-tool-args": {
+    "list_records": {"table": "ledger|invoices|payments|fx", "cursor": "string|null", "limit": "int 1..50 (default 50)", "filter": "object field->scalar (optional, whitelisted fields)"},
+    "get_record": {"table": "ledger|invoices|payments|fx", "id": "string"},
+    "get_document": {"doc_id": "string"},
+    "calculator": {"expression": "string <= 200 chars, + - * / ( ) and decimals"},
+    "submit": {"findings": "object, see findings.schema.json"}
+  }
+}

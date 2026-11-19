@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "trajectory_step",
+  "type": "object",
+  "required": ["episode_id", "step", "action", "observation", "reward", "terminated", "truncated",
+               "policy", "seed", "version", "config_id", "mode"],
+  "additionalProperties": false,
+  "properties": {
+    "episode_id": {"type": "string"},
+    "step": {"type": "integer", "minimum": 0},
+    "action": {"type": ["object", "null"]},
+    "observation": {"type": "object"},
+    "reward": {"type": "number"},
+    "terminated": {"type": "boolean"},
+    "truncated": {"type": "boolean"},
+    "policy": {"type": "string"},
+    "seed": {"type": ["integer", "null"]},
+    "version": {"type": "string"},
+    "config_id": {"type": "string"},
+    "mode": {"type": "string", "enum": ["train", "eval"]}
+  }
+}

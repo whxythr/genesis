@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "observation",
+  "anyOf": [
+    {
+      "type": "object",
+      "required": ["task", "manifest", "policy", "tools", "steps_remaining"],
+      "additionalProperties": false,
+      "properties": {
+        "task": {"type": "string"},
+        "manifest": {"type": "object"},
+        "policy": {"type": "object"},
+        "tools": {"type": "object"},
+        "steps_remaining": {"type": "integer", "minimum": 0}
+      }
+    },
+    {
+      "type": "object",
+      "required": ["step", "steps_remaining", "tool", "ok"],
+      "additionalProperties": false,
+      "properties": {
+        "step": {"type": "integer", "minimum": 1},
+        "steps_remaining": {"type": "integer", "minimum": 0},
+        "tool": {"type": ["string", "null"]},
+        "ok": {"type": "boolean"},
+        "result": {"type": "object"},
+        "error": {
+          "type": "object",
+          "required": ["code", "message"],
+          "additionalProperties": false,
+          "properties": {
+            "code": {"type": "string", "enum": ["UNKNOWN_ACTION", "BAD_ARGS", "UNKNOWN_TABLE", "NOT_FOUND", "BAD_CURSOR", "CALC_ERROR", "EPISODE_DONE", "TIMEOUT"]},
+            "message": {"type": "string", "maxLength": 80}
+          }
+        }
+      }
+    }
+  ]
+}

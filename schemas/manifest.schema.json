@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "manifest",
+  "type": "object",
+  "required": ["schema_version", "episode_id", "base_currency", "period_start", "period_end", "timezone",
+               "record_counts", "document_count", "rounding_rules", "currency_exponents"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string"},
+    "episode_id": {"type": "string", "pattern": "^EP-[2-9A-HJ-NP-Z]{10}$"},
+    "base_currency": {"type": "string", "pattern": "^[A-Z]{3}$"},
+    "period_start": {"type": "string"},
+    "period_end": {"type": "string"},
+    "timezone": {"type": "string", "pattern": "^[+-][0-9]{2}:[0-9]{2}$"},
+    "record_counts": {
+      "type": "object", "additionalProperties": false,
+      "required": ["ledger", "invoices", "payments", "fx"],
+      "properties": {"ledger": {"type": "integer"}, "invoices": {"type": "integer"},
+                     "payments": {"type": "integer"}, "fx": {"type": "integer"}}
+    },
+    "document_count": {"type": "integer", "minimum": 0},
+    "rounding_rules": {"type": "object"},
+    "currency_exponents": {"type": "object", "additionalProperties": {"type": "integer"}}
+  }
+}

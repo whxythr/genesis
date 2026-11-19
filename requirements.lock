@@ -1,0 +1,6 @@
+# Exact pins. Runtime needs only the Python 3.11 standard library; these are for tests.
+pytest==8.3.3
+iniconfig==2.0.0
+packaging==24.1
+pluggy==1.5.0
+colorama==0.4.6 ; sys_platform == "win32"
