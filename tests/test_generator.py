@@ -95,10 +95,11 @@ def test_unapplied_payment_amount(errored):
             if issue["type"] != "unapplied_payment":
                 continue
             p = pays[issue["affected_ids"][0]]
-            applied = sum(r["amount_minor"] for r in p["invoice_refs"] or [])
-            assert applied < p["amount_minor"]
+            dups = {i["affected_ids"][0] for i in ep.truth["issues"] if i["type"] == "duplicate_invoice"}
+            applied_valid = sum(r["amount_minor"] for r in p["invoice_refs"] or [] if r["invoice_id"] not in dups)
+            assert applied_valid < p["amount_minor"]
             if p["currency"] == base:
-                assert issue["expected_amount_minor"] == p["amount_minor"] - applied
+                assert issue["expected_amount_minor"] == p["amount_minor"] - applied_valid
             n += 1
     assert n
 

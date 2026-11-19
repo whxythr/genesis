@@ -12,7 +12,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
 from .. import jsonutil, money
-from ..config import ERROR_TYPES
+from ..config import ERROR_TYPES, SCENARIOS
 from ..ids import IdFactory
 from ..timeutil import fmt_ts, local_date, offset_minutes
 from .company import Company
@@ -26,19 +26,38 @@ class Injection:
     locked: set = field(default_factory=set)
 
 
-def plan_counts(rng: random.Random, cfg: dict) -> dict[str, int]:
+SCENARIO_TYPES = {
+    "partial_fx_payment_at_cutoff": ("period_cutoff", "fx_error", "unapplied_payment"),
+    "partially_paid_duplicate": ("duplicate_invoice", "unapplied_payment"),
+}
+SCENARIO_SIZE = {k: len(v) for k, v in SCENARIO_TYPES.items()}
+
+
+def make_plan(rng: random.Random, cfg: dict) -> dict:
+    """Decide clean/errored, interacting scenarios and per-type counts (before generation)."""
     enabled = [t for t in ERROR_TYPES if cfg["errors"][t]["enabled"]]
-    counts = {t: 0 for t in ERROR_TYPES}
-    if not enabled or cfg["max_errors"] == 0 or rng.random() < cfg["clean_probability"]:
-        return counts
+    plan = {"clean": False, "counts": {t: 0 for t in ERROR_TYPES}, "scenarios": []}
+    if cfg["max_errors"] == 0 or rng.random() < cfg["clean_probability"]:
+        plan["clean"] = True
+        return plan
+    budget = cfg["max_errors"]
+    for name in SCENARIOS:
+        sc = cfg["scenarios"][name]
+        types_on = all(t in enabled for t in SCENARIO_TYPES[name])
+        if sc["enabled"] and rng.random() < sc["probability"] and types_on and SCENARIO_SIZE[name] <= budget:
+            plan["scenarios"].append(name)
+            budget -= SCENARIO_SIZE[name]
+    counts = plan["counts"]
     for t in enabled:
         counts[t] = rng.randint(*cfg["errors"][t]["count"])
-    if sum(counts.values()) == 0:
+    if sum(counts.values()) == 0 and not plan["scenarios"] and enabled:
         counts[rng.choice(enabled)] = 1
-    while sum(counts.values()) > cfg["max_errors"]:
+    while sum(counts.values()) > budget:
         biggest = max(enabled, key=lambda t: (counts[t], t))
         counts[biggest] -= 1
-    return counts
+    if not enabled and not plan["scenarios"]:
+        plan["clean"] = True
+    return plan
 
 
 class _Injector:
@@ -55,18 +74,27 @@ class _Injector:
                 out.setdefault(ref["invoice_id"], []).append(p)
         return out
 
+    def unique_payment_ts(self, ts: datetime) -> datetime:
+        used = {int(datetime.fromisoformat(p["timestamp"]).timestamp()) for p in self.c.payments}
+        while int(ts.timestamp()) in used:
+            ts += timedelta(seconds=1)
+        return ts
+
     def _base_amount(self, amount: int, currency: str, ts: datetime) -> int:
         return money.convert(amount, currency, self.c.base_currency, self.c.policy_rate(currency, ts))
 
     # ---- duplicate_invoice ------------------------------------------------
-    def duplicate_invoice(self) -> bool:
+    def duplicate_invoice(self, forced: tuple[dict, timedelta] | None = None) -> bool:
         c, rng = self.c, self.rng
         by_inv = self._payments_by_invoice()
-        cands = [i for i in sorted(c.invoices, key=lambda i: i["invoice_id"]) if i["invoice_id"] not in self.inj.locked]
-        rng.shuffle(cands)
+        if forced is None:
+            cands = [i for i in sorted(c.invoices, key=lambda i: i["invoice_id"]) if i["invoice_id"] not in self.inj.locked]
+            rng.shuffle(cands)
+        else:
+            cands = [forced[0]]
         for orig in cands:
             issued = datetime.fromisoformat(orig["issued_at"])
-            delta = timedelta(seconds=rng.randint(3600, 72 * 3600))
+            delta = forced[1] if forced else timedelta(seconds=rng.randint(3600, 72 * 3600))
             dup_issued = issued + delta
             if dup_issued >= c.period_end - timedelta(hours=1):
                 continue
@@ -78,6 +106,7 @@ class _Injector:
             c.invoices.append(dup)
             c.txn_of[dup["doc_id"]] = self.ids.new("txn")
             c.tags[dup["doc_id"]] = ["injected"]
+            self.last_duplicate = dup
             self.inj.locked |= {orig["invoice_id"], dup["invoice_id"]}
             self.inj.locked |= {p["payment_id"] for p in by_inv.get(orig["invoice_id"], [])}
             amount = self._base_amount(dup["total_minor"], dup["currency"], dup_issued)
@@ -261,6 +290,8 @@ class _Injector:
                 # timezone trap: in the document's own offset the date still reads as the
                 # last day of the period, but the instant is after the period end
                 new_ts = c.period_end + timedelta(seconds=rng.randint(60, gap - 60))
+            if kind == "payment":
+                new_ts = self.unique_payment_ts(new_ts)
             posting_ts = c.period_end - timedelta(seconds=rng.randint(1, 6 * 3600))
             before = jsonutil.deep_copy(doc)
             doc[field_name] = fmt_ts(new_ts, display_offset)
@@ -298,10 +329,13 @@ class _Injector:
         return False
 
 
-def inject(company: Company, ids: IdFactory, rng: random.Random, cfg: dict) -> Injection:
+def inject(company: Company, ids: IdFactory, rng: random.Random, plan: dict, setup: dict) -> Injection:
+    from . import scenarios
+
     inj = Injection()
-    counts = plan_counts(rng, cfg)
+    counts = plan["counts"]
     injector = _Injector(company, ids, rng, inj)
+    scenarios.apply(injector, plan, setup)
     for etype in ERROR_TYPES:
         fn = getattr(injector, etype, None)
         for _ in range(counts[etype]):

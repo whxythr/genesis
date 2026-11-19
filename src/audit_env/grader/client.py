@@ -11,7 +11,6 @@ from .. import jsonutil
 from ..config import REPO_ROOT
 
 SRC_DIR = Path(__file__).resolve().parents[2]
-DEFAULT_EPISODES_ROOT = REPO_ROOT / "episodes"
 DEFAULT_GRADER_ROOT = REPO_ROOT / "grader_data"
 
 
@@ -20,18 +19,21 @@ class GraderError(RuntimeError):
 
 
 class GraderClient:
+    """Spawns the grader process. Paths to grader data are sent once in an ``init`` message
+    and are NOT kept by this object (the environment holds no reference to truth files)."""
+
     def __init__(self, eval_mode: bool = False, episodes_root: Path | None = None,
                  grader_root: Path | None = None, log_path: Path | None = None) -> None:
         bootstrap = ("import sys; sys.path.insert(0, sys.argv[1]); "
                      "from audit_env.grader.service import main; main(sys.argv[2:])")
-        cmd = [sys.executable, "-c", bootstrap, str(SRC_DIR),
-               "--episodes-root", str(episodes_root or DEFAULT_EPISODES_ROOT),
-               "--grader-root", str(grader_root or DEFAULT_GRADER_ROOT)]
-        if eval_mode:
-            cmd.append("--eval")
-        if log_path:
-            cmd += ["--log", str(log_path)]
+        cmd = [sys.executable, "-c", bootstrap, str(SRC_DIR)] + (["--eval"] if eval_mode else [])
         self._proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        init = {k: str(v) for k, v in (("episodes_root", episodes_root), ("grader_root", grader_root),
+                                       ("log", log_path)) if v is not None}
+        if init:
+            reply = self.call(dict(init, cmd="init"))
+            if not reply.get("ok"):
+                raise GraderError("grader init failed")
 
     def call(self, msg: dict) -> dict:
         if self._proc.poll() is not None:

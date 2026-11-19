@@ -2,6 +2,8 @@
 
 Protocol: one JSON object per line on stdin -> one JSON object per line on stdout.
 
+  {"cmd": "init", "episodes_root": str, "grader_root": str, "log": str}   (optional, once, first)
+
   {"cmd": "open", "source": {"kind": "generate", "seed": int, "config": {...}}}
   {"cmd": "open", "source": {"kind": "files", "split": str, "episode_id": str}}
       -> {"ok": true, "bundle": <open bundle>, "config_id": str}
@@ -23,7 +25,7 @@ import sys
 from pathlib import Path
 
 from .. import jsonutil
-from ..config import ConfigError
+from ..config import REPO_ROOT, ConfigError
 from ..generator.episode import GenerationError, generate_episode
 from ..generator.writer import read_closed, read_open
 from .core import grade
@@ -41,6 +43,7 @@ class Service:
         self.active: dict | None = None
         self.results: list[dict] = []
         self.finalized = False
+        self.initialized = False
 
     def log(self, entry: dict) -> None:
         if self.log_path:
@@ -50,7 +53,16 @@ class Service:
 
     def handle(self, msg: dict) -> dict:
         cmd = msg.get("cmd") if isinstance(msg, dict) else None
+        if cmd == "init":
+            if self.initialized:
+                return {"ok": False, "error": "ALREADY_INITIALIZED"}
+            self.initialized = True
+            for key, attr in (("episodes_root", "episodes_root"), ("grader_root", "grader_root"), ("log", "log_path")):
+                if isinstance(msg.get(key), str):
+                    setattr(self, attr, Path(msg[key]))
+            return {"ok": True}
         if cmd == "open":
+            self.initialized = True
             return self._open(msg.get("source"))
         if cmd == "grade":
             return self._grade(msg)
@@ -118,12 +130,9 @@ class Service:
 
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--episodes-root", required=True)
-    ap.add_argument("--grader-root", required=True)
     ap.add_argument("--eval", action="store_true")
-    ap.add_argument("--log", default=None)
     args = ap.parse_args(argv)
-    svc = Service(Path(args.episodes_root), Path(args.grader_root), args.eval, Path(args.log) if args.log else None)
+    svc = Service(REPO_ROOT / "episodes", REPO_ROOT / "grader_data", args.eval, None)
     stdin = io.TextIOWrapper(sys.stdin.buffer, encoding="utf-8")
     stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", newline="\n")
     for line in stdin:

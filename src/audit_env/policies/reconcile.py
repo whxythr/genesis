@@ -8,6 +8,9 @@
    ledger posting (AR debit for invoices, CASH for receipts).
 5. Cutoff: documents dated outside the period that are posted in the ledger.
 
+``ledger_amounts=True`` copies unapplied / cutoff amounts from the ledger posting
+instead of recomputing them at the policy rate (and ignores the duplicate-application
+rule) — the mistake the interacting scenarios are built to expose.
 ``naive_dates=True`` reproduces a common mistake (reads the calendar date straight
 from the timestamp text instead of converting to the company timezone). It is used
 in the failure analysis, not as an official baseline.
@@ -26,10 +29,13 @@ from .base import Policy, submit
 class ReconcilePolicy(Policy):
     name = "reconcile"
 
-    def __init__(self, naive_dates: bool = False) -> None:
+    def __init__(self, naive_dates: bool = False, ledger_amounts: bool = False) -> None:
         self.naive_dates = naive_dates
+        self.ledger_amounts = ledger_amounts
         if naive_dates:
             self.name = "reconcile_naive"
+        elif ledger_amounts:
+            self.name = "reconcile_ledger_amounts"
 
     def reset(self, obs: dict, truth: dict | None = None) -> None:
         super().reset(obs)
@@ -105,6 +111,8 @@ class ReconcilePolicy(Policy):
                              "currency": base, "evidence_ids": [e for e in evidence if e][:10]})
 
         # duplicates
+        dup_orig: dict[str, str] = {}  # duplicate invoice_id -> original doc_id
+        dup_doc: dict[str, str] = {}
         groups: dict[tuple, list[dict]] = defaultdict(list)
         for inv in invoices:
             groups[(inv["entity_id"], inv["currency"], inv["total_minor"])].append(inv)
@@ -125,6 +133,8 @@ class ReconcilePolicy(Policy):
             for same in by_lines.values():
                 same.sort(key=lambda d: (parse_ts(d["issued_at"]), d["doc_id"]))
                 for dup in same[1:]:
+                    dup_orig[dup["invoice_id"]] = same[0]["doc_id"]
+                    dup_doc[dup["invoice_id"]] = dup["doc_id"]
                     rr = rate(dup["currency"], dup["issued_at"])
                     if rr is None:
                         continue
@@ -137,14 +147,22 @@ class ReconcilePolicy(Policy):
         for p in payments:
             if p["kind"] != "receipt":
                 continue
-            applied = sum(r["amount_minor"] for r in p["invoice_refs"] or [])
-            if applied < p["amount_minor"]:
+            refs = p["invoice_refs"] or []
+            to_dup = [] if self.ledger_amounts else [r for r in refs if r["invoice_id"] in dup_orig]
+            effective = p["amount_minor"] - sum(r["amount_minor"] for r in refs) + sum(r["amount_minor"] for r in to_dup)
+            if effective > 0:
                 rr = rate(p["currency"], p["timestamp"])
                 if rr is None:
                     continue
                 txn = pay_txn.get(p["payment_id"], [{}])[0].get("txn_id")
-                add("unapplied_payment", p["payment_id"],
-                    money.convert(p["amount_minor"] - applied, p["currency"], base, rr[0]), [p["doc_id"], txn])
+                ev = [p["doc_id"], txn, rr[1]]
+                for r in to_dup:
+                    ev += [dup_orig[r["invoice_id"]], dup_doc[r["invoice_id"]]]
+                amount = money.convert(effective, p["currency"], base, rr[0])
+                if self.ledger_amounts:
+                    amount = sum(r["credit_minor"] or 0 for r in pay_txn.get(p["payment_id"], [])
+                                 if r["account"] == "UNAPPLIED_CASH")
+                add("unapplied_payment", p["payment_id"], amount, ev)
 
         # fx errors and cutoff
         docs_all = [("invoice", i, i["issued_at"], i["total_minor"]) for i in invoices]
@@ -167,6 +185,10 @@ class ReconcilePolicy(Policy):
                 if posted != correct:
                     add("fx_error", aid, abs(posted - correct), [d["doc_id"], rr[1], txn])
             if not self._inside(ts):
-                add("period_cutoff", aid, correct, [d["doc_id"], txn])
+                amount = correct
+                if self.ledger_amounts:
+                    acct = "AR" if kind == "invoice" else "CASH"
+                    amount = sum(r["debit_minor"] or 0 for r in rows if r["account"] == acct)
+                add("period_cutoff", aid, amount, [d["doc_id"], txn, rr[1]])
 
         yield submit(self.episode_id, findings[:30])

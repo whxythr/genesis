@@ -121,8 +121,13 @@ def test_weakened_evidence_is_insufficient(hundred):
             ev = issue["acceptable_evidence_sets"][0]
             for k in range(len(ev)):
                 weaker = ev[:k] + ev[k + 1:]
-                with pytest.raises(evidence.Insufficient):
-                    evidence.derive(issue["type"], weaker, ep.bundle)
+                try:
+                    got = evidence.derive(issue["type"], weaker, ep.bundle)
+                except evidence.Insufficient:
+                    got = None
+                # either nothing can be derived, or the derivation no longer reproduces the truth
+                assert got is None or (got["affected_ids"], got["amount"]) != (
+                    sorted(issue["affected_ids"]), issue["expected_amount_minor"])
                 checked += 1
     assert checked > 100
 

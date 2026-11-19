@@ -287,6 +287,8 @@ class _Builder:
                 n_parts = rng.randint(2, 3) if total >= 3 else 1
                 cuts = sorted(rng.sample(range(1, total), k=n_parts - 1)) if n_parts > 1 else []
                 parts = [b - a for a, b in zip([0] + cuts, cuts + [total])]
+                if min(parts) < max(100, total // 20):
+                    parts = [total]  # avoid dust allocations that round to zero in base currency
                 t = t0
                 paid = 0
                 for part in parts:
@@ -358,7 +360,7 @@ class _Builder:
                 ts = datetime.fromisoformat(p["timestamp"])
                 if ref["invoice_id"] not in last_pay or ts > last_pay[ref["invoice_id"]]:
                     last_pay[ref["invoice_id"]] = ts
-        candidates = sorted((i for i in self.paid_in_full if i["total_minor"] >= 20), key=lambda i: i["invoice_id"])
+        candidates = sorted((i for i in self.paid_in_full if i["total_minor"] >= 2000), key=lambda i: i["invoice_id"])
         rng.shuffle(candidates)
         for inv in candidates[:k]:
             if self._docs() >= self.doc_budget:

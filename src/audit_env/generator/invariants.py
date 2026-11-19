@@ -186,9 +186,11 @@ def analyze(bundle: dict) -> dict:
     groups: dict[str, list[dict]] = defaultdict(list)
     for inv in bundle["invoices"]:
         groups[_line_signature(inv)].append(inv)
+    dup_orig: dict[str, str] = {}  # duplicate invoice_id -> original doc_id
     for sig in sorted(groups):
         group = sorted(groups[sig], key=lambda i: (parse_ts(i["issued_at"]), i["doc_id"]))
         for dup in group[1:]:
+            dup_orig[dup["invoice_id"]] = group[0]["doc_id"]
             t_ids = invoice_txn.get(dup["invoice_id"], [])
             amount = booked.get(dup["invoice_id"], (None, None))[1]
             c.add("DUPLICATE_INVOICE", [dup["invoice_id"]], amount,
@@ -226,7 +228,7 @@ def analyze(bundle: dict) -> dict:
         rate, fx_id = rr
         correct_cash = money.convert(pay["amount_minor"], pay["currency"], c.base, rate)
         if not c.in_period(ts):
-            c.add("DOC_OUT_OF_PERIOD", [pid], correct_cash, [pay["doc_id"], txn_id])
+            c.add("DOC_OUT_OF_PERIOD", [pid], correct_cash, [pay["doc_id"], txn_id] + ([fx_id] if fx_id else []))
         elif parse_ts(rows[0]["timestamp"]) != ts:
             c.add("POSTING_TS_MISMATCH", [pid])
 
@@ -236,16 +238,14 @@ def analyze(bundle: dict) -> dict:
             c.add("PAYMENT_POSTING_SHAPE", [pid])
             continue
         posted_cash = cash_rows[0][cash_side]
-        used_rate = rate
+        used_rates = [rate]
         if posted_cash != correct_cash:
             if pay["currency"] == c.base:
                 c.add("AMOUNT_MISMATCH", [pid])
             else:
                 c.add("FX_MISMATCH", [pid], abs(posted_cash - correct_cash), [pay["doc_id"], fx_id, txn_id])
-                for (cur, _d), (r_, _f) in sorted(c.rates.items()):
-                    if cur == pay["currency"] and money.convert(pay["amount_minor"], cur, c.base, r_) == posted_cash:
-                        used_rate = r_
-                        break
+                used_rates = [r_ for (cur, _d), (r_, _f) in sorted(c.rates.items())
+                              if cur == pay["currency"] and money.convert(pay["amount_minor"], cur, c.base, r_) == posted_cash]
 
         if pay["kind"] == "refund":
             if not refs or len(refs) != 1 or refs[0]["amount_minor"] != pay["amount_minor"]:
@@ -291,12 +291,20 @@ def analyze(bundle: dict) -> dict:
                 c.add("AR_RELIEF_MISMATCH", [pid, inv_id])
         unapplied = pay["amount_minor"] - total_applied
         posted_unapplied = sum((r["credit_minor"] or 0) - (r["debit_minor"] or 0) for r in rows if r["account"] == "UNAPPLIED_CASH")
-        expected_line = money.convert(unapplied, pay["currency"], c.base, used_rate) if unapplied > 0 else 0
-        if posted_unapplied != expected_line:
+        if not any(posted_unapplied == (money.convert(unapplied, pay["currency"], c.base, r_) if unapplied > 0 else 0)
+                   for r_ in used_rates):
             c.add("UNAPPLIED_LINE_MISMATCH", [pid])
-        if unapplied > 0:
-            amount = money.convert(unapplied, pay["currency"], c.base, rate)
-            c.add("UNAPPLIED_PAYMENT", [pid], amount, [pay["doc_id"], txn_id])
+        # cash applied to a duplicate invoice (which must be voided) is effectively unapplied
+        to_dup = [ref for ref in refs or [] if ref["invoice_id"] in dup_orig]
+        effective = unapplied + sum(ref["amount_minor"] for ref in to_dup)
+        if effective > 0:
+            amount = money.convert(effective, pay["currency"], c.base, rate)
+            ev = [pay["doc_id"], txn_id]
+            for ref in to_dup:
+                ev += [dup_orig[ref["invoice_id"]], invoices[ref["invoice_id"]]["doc_id"]]
+            if fx_id and (to_dup or posted_cash != correct_cash):
+                ev.append(fx_id)
+            c.add("UNAPPLIED_PAYMENT", [pid], amount, ev)
         if any(r["account"] not in DOC_ACCOUNTS for r in rows):
             c.add("PAYMENT_POSTING_SHAPE", [pid])
 

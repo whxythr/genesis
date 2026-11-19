@@ -67,9 +67,29 @@ def derive(issue_type: str, evidence: list[str], bundle: dict) -> dict:
         if len(pays) != 1 or pays[0]["kind"] != "receipt":
             raise Insufficient("need one receipt")
         p = pays[0]
-        applied = sum(r["amount_minor"] for r in p["invoice_refs"] or [])
-        if applied >= p["amount_minor"]:
-            raise Insufficient("payment fully applied")
+        if not any(r["payment_id"] == p["payment_id"] for r in rows):
+            raise Insufficient("payment posting not in evidence")
+        # duplicates provable from the evidence: identical invoice pairs, the later one
+        invs = [d for k, d in docs if k == "invoice"]
+        dups = set()
+        for a in invs:
+            for b in invs:
+                if a is not b and _sig(a) == _sig(b) and (parse_ts(b["issued_at"]), b["doc_id"]) > (parse_ts(a["issued_at"]), a["doc_id"]):
+                    dups.add(b["invoice_id"])
+        refs = p["invoice_refs"] or []
+        to_dup = sum(r["amount_minor"] for r in refs if r["invoice_id"] in dups)
+        effective = p["amount_minor"] - sum(r["amount_minor"] for r in refs) + to_dup
+        if effective <= 0:
+            raise Insufficient("payment fully applied to valid invoices")
+        if v["fx"]:
+            fx = v["fx"][0]
+            if fx["source_currency"] != p["currency"] or fx["date"] != local_date(_doc_ts("payment", p), tz).isoformat():
+                raise Insufficient("fx row is not the policy rate")
+            return {"affected_ids": [p["payment_id"]], "amount": money.convert(effective, p["currency"], m["base_currency"], fx["rate"])}
+        if p["currency"] == m["base_currency"]:
+            return {"affected_ids": [p["payment_id"]], "amount": effective}
+        if to_dup:
+            raise Insufficient("foreign amount needs the fx row")
         line = sum((r["credit_minor"] or 0) for r in rows if r["payment_id"] == p["payment_id"] and r["account"] == "UNAPPLIED_CASH")
         if not line:
             raise Insufficient("unapplied line not in evidence")

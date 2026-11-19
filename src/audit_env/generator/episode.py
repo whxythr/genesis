@@ -9,9 +9,9 @@ from pathlib import Path
 from .. import SCHEMA_VERSION, __version__, jsonutil
 from ..config import config_id, resolve
 from ..ids import ALPHABET, IdFactory
-from . import evidence, invariants, writer
+from . import evidence, invariants, scenarios, writer
 from .company import build_company
-from .errors import inject
+from .errors import inject, make_plan
 from .posting import post_ledger
 
 
@@ -52,7 +52,9 @@ def generate_episode(seed: int, config: dict | None = None) -> Episode:
     cid = config_id(cfg)
     ids = IdFactory(random.Random(f"{seed}|ids|{cid}"))
     episode_id = _episode_id(seed, cid)
+    plan = make_plan(random.Random(f"{seed}|plan|{cid}"), cfg)
     company = build_company(random.Random(f"{seed}|company|{cid}"), cfg, ids, episode_id)
+    scenario_state = scenarios.setup(company, ids, random.Random(f"{seed}|scenario|{cid}"), plan)
 
     clean_ledger = post_ledger(company, ids)
     clean_bundle = writer.build_bundle(company, clean_ledger)
@@ -60,7 +62,7 @@ def generate_episode(seed: int, config: dict | None = None) -> Episode:
     if problems:
         raise GenerationError(f"clean history violates invariants (seed={seed}): {problems[:5]}")
 
-    inj = inject(company, ids, random.Random(f"{seed}|inject|{cid}"), cfg)
+    inj = inject(company, ids, random.Random(f"{seed}|inject|{cid}"), plan, scenario_state)
     ledger = post_ledger(company, ids, inj.overrides)
     bundle = writer.build_bundle(company, ledger)
 
@@ -95,6 +97,7 @@ def generate_episode(seed: int, config: dict | None = None) -> Episode:
                              "payments": len(clean_bundle["payments"])},
             "distractor_tags": tags,
             "overrides": jsonutil.deep_copy(inj.overrides),
+            "plan": plan,
         },
         "changes": inj.changes,
         "ledger_diff": _ledger_diff(clean_ledger, ledger),

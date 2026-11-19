@@ -75,6 +75,10 @@ def build_policy(company: Company) -> dict:
             "invoice_refs": "list of {invoice_id, amount_minor} in payment currency, or null if none",
             "duplicate_rule": "two invoices with the same entity_id, currency, total_minor and identical "
                               "line_items are duplicates; the one issued later is the duplicate",
+            "unapplied_rule": "a receipt's unapplied amount = amount_minor - sum(invoice_refs) + amounts "
+                              "applied to duplicate invoices (cash on an invoice that must be voided is unapplied)",
+            "issue_amounts": "every issue amount is in base currency at the policy rate of the document's own "
+                             "date, computed as if all other issues were already corrected",
         },
     }
 

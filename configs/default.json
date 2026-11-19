@@ -21,7 +21,7 @@
     "period_cutoff": {"enabled": true, "count": [0, 2]}
   },
   "scenarios": {
-    "partial_fx_payment_at_cutoff": {"enabled": false, "probability": 0.0},
-    "partially_paid_duplicate": {"enabled": false, "probability": 0.0}
+    "partial_fx_payment_at_cutoff": {"enabled": true, "probability": 0.3},
+    "partially_paid_duplicate": {"enabled": true, "probability": 0.3}
   }
 }

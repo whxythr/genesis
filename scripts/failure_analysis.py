@@ -1,6 +1,6 @@
 """Per-type failure breakdown of a reconcile policy (harness-side, uses truth after the run).
 
-Usage: PYTHONPATH=src python scripts/failure_analysis.py [n_seeds] [--naive]
+Usage: PYTHONPATH=src python scripts/failure_analysis.py [n_seeds] [--naive | --ledger-amounts]
 """
 
 import sys
@@ -17,12 +17,13 @@ from audit_env.runner import run_episode
 def main() -> None:
     n = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 100
     naive = "--naive" in sys.argv
+    ledger = "--ledger-amounts" in sys.argv
     env = AuditEnv()
     tp, fp, fn = Counter(), Counter(), Counter()
     rewards = []
     try:
         for seed in range(n):
-            rows, summary = run_episode(env, ReconcilePolicy(naive_dates=naive), seed=seed)
+            rows, summary = run_episode(env, ReconcilePolicy(naive_dates=naive, ledger_amounts=ledger), seed=seed)
             rewards.append(summary["reward"])
             ep = generate_episode(seed)
             findings, _ = validate_and_normalize(rows[-1]["action"]["args"]["findings"], ep.episode_id)
@@ -36,7 +37,8 @@ def main() -> None:
                     fn[t["type"]] += 1
     finally:
         env.close()
-    print(f"policy={'reconcile_naive' if naive else 'reconcile'} seeds={n} mean_reward={sum(rewards) / n:.3f}")
+    name = ReconcilePolicy(naive_dates=naive, ledger_amounts=ledger).name
+    print(f"policy={name} seeds={n} mean_reward={sum(rewards) / n:.3f}")
     print(f"{'type':20s} {'TP':>5s} {'FP':>5s} {'FN':>5s}")
     for t in sorted(set(tp) | set(fp) | set(fn)):
         print(f"{t:20s} {tp[t]:5d} {fp[t]:5d} {fn[t]:5d}")
