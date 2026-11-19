@@ -1,0 +1,27 @@
+{
+  "base_currency": "KZT",
+  "currency_exponents": {
+    "EUR": 2,
+    "GBP": 2,
+    "JPY": 0,
+    "KWD": 3,
+    "KZT": 2,
+    "USD": 2
+  },
+  "document_count": 86,
+  "episode_id": "EP-NYB5N2C638",
+  "period_end": "2026-05-01T00:00:00+09:00",
+  "period_start": "2026-04-01T00:00:00+09:00",
+  "record_counts": {
+    "fx": 88,
+    "invoices": 46,
+    "ledger": 496,
+    "payments": 40
+  },
+  "rounding_rules": {
+    "fx_rate_format": "decimal string",
+    "mode": "ROUND_HALF_UP"
+  },
+  "schema_version": "1.0",
+  "timezone": "+09:00"
+}

@@ -1,4 +1,118 @@
 {
+  "composition": [
+    {
+      "episode_id": "EP-88AR4KC9PB",
+      "issues": [
+        "fx_error",
+        "fx_error",
+        "period_cutoff",
+        "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partial_fx_payment_at_cutoff"
+      ],
+      "seed": 1000
+    },
+    {
+      "episode_id": "EP-K7JMSNZ97N",
+      "issues": [
+        "duplicate_invoice",
+        "duplicate_invoice",
+        "fx_error",
+        "period_cutoff",
+        "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partial_fx_payment_at_cutoff",
+        "partially_paid_duplicate"
+      ],
+      "seed": 1001
+    },
+    {
+      "episode_id": "EP-HCQ2JAPNKP",
+      "issues": [],
+      "scenarios": [],
+      "seed": 1002
+    },
+    {
+      "episode_id": "EP-A2575XUBN7",
+      "issues": [],
+      "scenarios": [],
+      "seed": 1003
+    },
+    {
+      "episode_id": "EP-VXGKUPAV7G",
+      "issues": [
+        "duplicate_invoice"
+      ],
+      "scenarios": [],
+      "seed": 1004
+    },
+    {
+      "episode_id": "EP-9VEARKHCQM",
+      "issues": [
+        "fx_error",
+        "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partial_fx_payment_at_cutoff"
+      ],
+      "seed": 1005
+    },
+    {
+      "episode_id": "EP-2TE6AWJNZF",
+      "issues": [
+        "duplicate_invoice",
+        "duplicate_invoice",
+        "duplicate_invoice",
+        "fx_error",
+        "fx_error",
+        "period_cutoff",
+        "unapplied_payment",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partially_paid_duplicate"
+      ],
+      "seed": 1006
+    },
+    {
+      "episode_id": "EP-4L8SHJNMV9",
+      "issues": [],
+      "scenarios": [],
+      "seed": 1007
+    },
+    {
+      "episode_id": "EP-NF69W63B9Q",
+      "issues": [
+        "duplicate_invoice",
+        "fx_error",
+        "fx_error",
+        "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment",
+        "unapplied_payment",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partially_paid_duplicate"
+      ],
+      "seed": 1008
+    },
+    {
+      "episode_id": "EP-5UEKS4NHXP",
+      "issues": [],
+      "scenarios": [],
+      "seed": 1009
+    }
+  ],
   "config": {
     "config_name": "train-v1"
   },

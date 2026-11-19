@@ -1,4 +1,117 @@
 {
+  "composition": [
+    {
+      "episode_id": "EP-9N9QTLN67X",
+      "issues": [
+        "duplicate_invoice",
+        "duplicate_invoice",
+        "fx_error",
+        "fx_error",
+        "period_cutoff",
+        "unapplied_payment",
+        "unapplied_payment",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partial_fx_payment_at_cutoff"
+      ],
+      "seed": 2000
+    },
+    {
+      "episode_id": "EP-QX9H473BR9",
+      "issues": [
+        "duplicate_invoice",
+        "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment",
+        "unapplied_payment"
+      ],
+      "scenarios": [],
+      "seed": 2001
+    },
+    {
+      "episode_id": "EP-5Y77MHH3KZ",
+      "issues": [
+        "duplicate_invoice",
+        "duplicate_invoice",
+        "fx_error",
+        "fx_error",
+        "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment",
+        "unapplied_payment"
+      ],
+      "scenarios": [],
+      "seed": 2002
+    },
+    {
+      "episode_id": "EP-743KXR4DWJ",
+      "issues": [
+        "duplicate_invoice",
+        "duplicate_invoice",
+        "fx_error",
+        "period_cutoff",
+        "unapplied_payment"
+      ],
+      "scenarios": [],
+      "seed": 2003
+    },
+    {
+      "episode_id": "EP-JFTD788XPQ",
+      "issues": [
+        "duplicate_invoice",
+        "fx_error",
+        "period_cutoff",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partial_fx_payment_at_cutoff"
+      ],
+      "seed": 2004
+    },
+    {
+      "episode_id": "EP-UD5LX4C467",
+      "issues": [],
+      "scenarios": [],
+      "seed": 2005
+    },
+    {
+      "episode_id": "EP-36FZE8RYDN",
+      "issues": [
+        "fx_error",
+        "fx_error",
+        "period_cutoff",
+        "period_cutoff"
+      ],
+      "scenarios": [],
+      "seed": 2006
+    },
+    {
+      "episode_id": "EP-DSMADLCEWJ",
+      "issues": [
+        "duplicate_invoice",
+        "duplicate_invoice",
+        "fx_error",
+        "unapplied_payment"
+      ],
+      "scenarios": [
+        "partially_paid_duplicate"
+      ],
+      "seed": 2007
+    },
+    {
+      "episode_id": "EP-NYB5N2C638",
+      "issues": [],
+      "scenarios": [],
+      "seed": 2008
+    },
+    {
+      "episode_id": "EP-2JCKUYKSTL",
+      "issues": [],
+      "scenarios": [],
+      "seed": 2009
+    }
+  ],
   "config": {
     "config_name": "dev-v1"
   },

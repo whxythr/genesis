@@ -1,0 +1,82 @@
+{
+  "episode_id": "EP-QX9H473BR9",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-C4JWX2E8",
+          "D-QNCVEUL7",
+          "T-2GGN6KCR"
+        ]
+      ],
+      "affected_ids": [
+        "INV-KY4CW89E"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 209499,
+      "issue_id": "ISS-01",
+      "type": "duplicate_invoice"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-SFNZNLF3",
+          "T-DZDZ5XE8"
+        ]
+      ],
+      "affected_ids": [
+        "INV-JCQZJA78"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 75659,
+      "issue_id": "ISS-02",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-2EWBP7X5",
+          "T-YCZNSPQ8"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-QR2WMH6E"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 166644,
+      "issue_id": "ISS-03",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-7MH3N2FF",
+          "T-5V9JS6EZ"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-JAXZEB53"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 10433,
+      "issue_id": "ISS-04",
+      "type": "unapplied_payment"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-XYMYZ24U",
+          "T-FRK27L98"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-L3SBYRDZ"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 20355,
+      "issue_id": "ISS-05",
+      "type": "unapplied_payment"
+    }
+  ],
+  "schema_version": "1.0"
+}

@@ -1,0 +1,22 @@
+{
+  "episode_id": "EP-VXGKUPAV7G",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-3DPQHKXL",
+          "D-RG4YJFEH",
+          "T-7NXEVZRH"
+        ]
+      ],
+      "affected_ids": [
+        "INV-XQBM5WU5"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 223429,
+      "issue_id": "ISS-01",
+      "type": "duplicate_invoice"
+    }
+  ],
+  "schema_version": "1.0"
+}

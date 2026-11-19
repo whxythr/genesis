@@ -1,0 +1,67 @@
+{
+  "episode_id": "EP-9VEARKHCQM",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-TBQ2SNQU",
+          "FX-MGNEXZER",
+          "T-VSLYAZSC"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-KEZJEHD8"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 65,
+      "issue_id": "ISS-01",
+      "type": "fx_error"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-WAQ9Q696",
+          "T-9RDPB7XT"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-35S7FZ46"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 17485,
+      "issue_id": "ISS-02",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-H7XTEPYV",
+          "T-XFUB9KFU"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-SB2EM2U3"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 38782,
+      "issue_id": "ISS-03",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-7R3SZL3C",
+          "T-CWESGFMJ"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-L4253G4D"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 30672,
+      "issue_id": "ISS-04",
+      "type": "unapplied_payment"
+    }
+  ],
+  "schema_version": "1.0"
+}

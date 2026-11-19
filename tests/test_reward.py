@@ -124,3 +124,36 @@ def test_reward_range():
     assert terminal_reward(0.0, 0) == -1.0
     assert terminal_reward(0.0, 100) == -1.0
     assert terminal_reward(1.0, 100) == 0.8
+
+
+def test_amount_brute_force_does_not_pay(errored):
+    """Submitting many amounts for each true issue: at most one can match, the rest are FPs."""
+    for ep in errored:
+        exact = oracle_findings(ep.truth)
+        spray = []
+        for f in exact:
+            for k in range(-3, 4):
+                g = copy.deepcopy(f)
+                g["claimed_amount_minor"] = max(0, f["claimed_amount_minor"] + k * 10_000)
+                spray.append(g)
+        assert _g(ep, spray[:30]) < _g(ep, exact, steps=99)
+        assert _g(ep, spray[:30]) < 0.5
+
+
+def test_every_type_on_every_true_id_is_punished(errored):
+    for ep in errored:
+        exact = oracle_findings(ep.truth)
+        spray = []
+        for f in exact:
+            for t in ("duplicate_invoice", "unapplied_payment", "fx_error", "period_cutoff"):
+                spray.append(dict(copy.deepcopy(f), type=t))
+        assert _g(ep, spray[:30]) < _g(ep, exact, steps=99)
+
+
+def test_reward_depends_only_on_fields_not_order_or_case(errored):
+    ep = errored[0]
+    f = oracle_findings(ep.truth)
+    g = copy.deepcopy(list(reversed(f)))
+    for x in g:
+        x["evidence_ids"] = list(reversed([e.lower() for e in x["evidence_ids"]]))
+    assert _g(ep, f) == _g(ep, g)

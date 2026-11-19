@@ -1,16 +1,16 @@
 {
-  "config_id": "dev-v1-1e7b0f387e",
+  "config_id": "dev-v1-ab04df8c26",
   "episodes": [
-    "EP-3VHCZ5ZDRR",
-    "EP-E46WPV65VL",
-    "EP-FMTQEJAQRH",
-    "EP-GLDRRGWHQX",
-    "EP-GSDHVQW9EX",
-    "EP-KCE8YSLHUL",
-    "EP-M3NHU2GJFL",
-    "EP-MS34LET8P7",
-    "EP-S9ART65XMS",
-    "EP-XNYM7XR7SA"
+    "EP-2JCKUYKSTL",
+    "EP-36FZE8RYDN",
+    "EP-5Y77MHH3KZ",
+    "EP-743KXR4DWJ",
+    "EP-9N9QTLN67X",
+    "EP-DSMADLCEWJ",
+    "EP-JFTD788XPQ",
+    "EP-NYB5N2C638",
+    "EP-QX9H473BR9",
+    "EP-UD5LX4C467"
   ],
   "split": "dev",
   "version": "0.1.0"

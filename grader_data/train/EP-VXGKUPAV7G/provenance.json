@@ -1,0 +1,257 @@
+{
+  "changes": [
+    {
+      "action": "insert_document",
+      "affected_ids": [
+        "INV-XQBM5WU5"
+      ],
+      "after": {
+        "currency": "JPY",
+        "doc_id": "D-3DPQHKXL",
+        "due_at": "2026-11-16T07:58:03-05:00",
+        "entity_id": "E-SHLMGEKS",
+        "entity_name": "Vexarisar Industries",
+        "invoice_id": "INV-XQBM5WU5",
+        "issued_at": "2026-11-02T07:58:03-05:00",
+        "line_items": [
+          {
+            "amount_minor": 365442,
+            "description": "Consulting hours, order 12538",
+            "line_no": 1,
+            "quantity": 11,
+            "unit_price_minor": 33222
+          },
+          {
+            "amount_minor": 4950,
+            "description": "Training session, order 12538",
+            "line_no": 2,
+            "quantity": 5,
+            "unit_price_minor": 990
+          }
+        ],
+        "total_minor": 370392
+      },
+      "before": null,
+      "copied_from_doc_id": "D-RG4YJFEH",
+      "issue_id": "ISS-01",
+      "reason": "invoice re-issued with new ids but identical entity, currency, total and line items, and posted to AR/REVENUE a second time",
+      "target_doc_id": "D-3DPQHKXL",
+      "type": "duplicate_invoice"
+    }
+  ],
+  "config": {
+    "base_currencies": [
+      "KZT",
+      "USD",
+      "EUR"
+    ],
+    "clean_probability": 0.25,
+    "config_name": "train-v1",
+    "distractors": {
+      "boundary_timezone": [
+        0,
+        2
+      ],
+      "refunds": [
+        0,
+        3
+      ],
+      "subscriptions": [
+        1,
+        3
+      ]
+    },
+    "errors": {
+      "duplicate_invoice": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "fx_error": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "period_cutoff": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "unapplied_payment": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      }
+    },
+    "foreign_currencies": [
+      "USD",
+      "EUR",
+      "JPY",
+      "KWD",
+      "GBP"
+    ],
+    "foreign_share": 0.3,
+    "max_documents": 200,
+    "max_errors": 12,
+    "max_ledger_rows": 2000,
+    "n_background_txns": [
+      80,
+      280
+    ],
+    "n_entities": [
+      6,
+      18
+    ],
+    "n_invoices": [
+      20,
+      55
+    ],
+    "payment_mix": {
+      "combined": 0.15,
+      "full": 0.45,
+      "split": 0.15,
+      "unpaid": 0.25
+    },
+    "scenarios": {
+      "partial_fx_payment_at_cutoff": {
+        "enabled": true,
+        "probability": 0.3
+      },
+      "partially_paid_duplicate": {
+        "enabled": true,
+        "probability": 0.3
+      }
+    },
+    "timezones": [
+      "+05:00",
+      "+03:00",
+      "+00:00",
+      "+01:00",
+      "-03:00",
+      "-05:00",
+      "+09:00",
+      "+05:30"
+    ],
+    "year": 2026
+  },
+  "config_id": "train-v1-790238c46f",
+  "episode_id": "EP-VXGKUPAV7G",
+  "generation": {
+    "base_currency": "EUR",
+    "clean_counts": {
+      "invoices": 51,
+      "ledger": 626,
+      "payments": 56
+    },
+    "distractor_tags": {
+      "boundary_timezone": [
+        "D-BA32YX9N",
+        "D-T6FRBTM5"
+      ],
+      "combined": [
+        "D-GZKPBYAU",
+        "D-LPR49ZYN"
+      ],
+      "injected": [
+        "D-3DPQHKXL"
+      ],
+      "refund": [
+        "D-VUVEZK9C"
+      ],
+      "split": [
+        "D-2YES95VA",
+        "D-4XY8YXG9",
+        "D-5E9BVDVX",
+        "D-72NUGVVG",
+        "D-BXG6M8HN",
+        "D-C8KULB3H",
+        "D-ETAPSUC8",
+        "D-FFUTTL8U",
+        "D-FWP8E7RW",
+        "D-H8N2TCBU",
+        "D-LP4TPAVW",
+        "D-MEXH2HS4",
+        "D-PUHH2HAE",
+        "D-R9QFDBVZ",
+        "D-SHKZU4JS",
+        "D-TLVXVL35",
+        "D-TN89Y8H7",
+        "D-UZ589D5Q",
+        "D-WURYE4AZ",
+        "D-YJSB9CH2"
+      ],
+      "subscription": [
+        "D-BKY84LXD",
+        "D-JNUUYCF8",
+        "D-LFTLVLDE",
+        "D-N38U6DYX",
+        "D-NAGKP5YT",
+        "D-PEPFUVBE"
+      ]
+    },
+    "overrides": {},
+    "period_end": "2026-12-01T00:00:00-05:00",
+    "period_start": "2026-11-01T00:00:00-05:00",
+    "plan": {
+      "clean": false,
+      "counts": {
+        "duplicate_invoice": 1,
+        "fx_error": 0,
+        "period_cutoff": 0,
+        "unapplied_payment": 0
+      },
+      "scenarios": []
+    },
+    "steps": [
+      "build_company",
+      "post_ledger(clean)",
+      "invariants.check_clean",
+      "inject",
+      "post_ledger(injected)",
+      "invariants.compare_with_truth",
+      "evidence.check_sufficiency"
+    ],
+    "timezone": "-05:00"
+  },
+  "ledger_diff": {
+    "added": [
+      {
+        "account": "AR",
+        "credit_minor": 0,
+        "currency": "EUR",
+        "debit_minor": 223429,
+        "entity_id": "E-SHLMGEKS",
+        "invoice_id": "INV-XQBM5WU5",
+        "payment_id": null,
+        "row_id": "R-6Y3VUAZ9",
+        "timestamp": "2026-11-02T07:58:03-05:00",
+        "txn_id": "T-7NXEVZRH"
+      },
+      {
+        "account": "REVENUE",
+        "credit_minor": 223429,
+        "currency": "EUR",
+        "debit_minor": 0,
+        "entity_id": "E-SHLMGEKS",
+        "invoice_id": "INV-XQBM5WU5",
+        "payment_id": null,
+        "row_id": "R-W47ZUAMP",
+        "timestamp": "2026-11-02T07:58:03-05:00",
+        "txn_id": "T-7NXEVZRH"
+      }
+    ],
+    "changed": [],
+    "removed": []
+  },
+  "schema_version": "1.0",
+  "seed": 1004,
+  "version": "0.1.0"
+}

@@ -1,0 +1,100 @@
+{
+  "episode_id": "EP-88AR4KC9PB",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-7RTRATSD",
+          "FX-GURXETKS",
+          "T-PCTBS84W"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-ARDBS3ZQ"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 108,
+      "issue_id": "ISS-01",
+      "type": "fx_error"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-78KGFSPA",
+          "FX-RXXK5NZB",
+          "T-QGMJWYA3"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-DE7SQUJB"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 13,
+      "issue_id": "ISS-02",
+      "type": "fx_error"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-RQGMPGMB",
+          "T-W2VL9F39"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-6JGDBWT5"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 50066,
+      "issue_id": "ISS-03",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-7RTRATSD",
+          "FX-GURXETKS",
+          "T-PCTBS84W"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-ARDBS3ZQ"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 20623,
+      "issue_id": "ISS-04",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-HMATVWLS",
+          "T-4E8RR8AW"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-CF3U4DX9"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 13212,
+      "issue_id": "ISS-05",
+      "type": "period_cutoff"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-7RTRATSD",
+          "FX-GURXETKS",
+          "T-PCTBS84W"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-ARDBS3ZQ"
+      ],
+      "currency": "USD",
+      "expected_amount_minor": 8249,
+      "issue_id": "ISS-06",
+      "type": "unapplied_payment"
+    }
+  ],
+  "schema_version": "1.0"
+}

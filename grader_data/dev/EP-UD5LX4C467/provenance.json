@@ -1,0 +1,171 @@
+{
+  "changes": [],
+  "config": {
+    "base_currencies": [
+      "KZT",
+      "USD",
+      "EUR"
+    ],
+    "clean_probability": 0.25,
+    "config_name": "dev-v1",
+    "distractors": {
+      "boundary_timezone": [
+        0,
+        2
+      ],
+      "refunds": [
+        0,
+        3
+      ],
+      "subscriptions": [
+        1,
+        3
+      ]
+    },
+    "errors": {
+      "duplicate_invoice": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "fx_error": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "period_cutoff": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "unapplied_payment": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      }
+    },
+    "foreign_currencies": [
+      "USD",
+      "EUR",
+      "JPY",
+      "KWD",
+      "GBP"
+    ],
+    "foreign_share": 0.3,
+    "max_documents": 200,
+    "max_errors": 12,
+    "max_ledger_rows": 2000,
+    "n_background_txns": [
+      80,
+      280
+    ],
+    "n_entities": [
+      6,
+      18
+    ],
+    "n_invoices": [
+      20,
+      55
+    ],
+    "payment_mix": {
+      "combined": 0.15,
+      "full": 0.45,
+      "split": 0.15,
+      "unpaid": 0.25
+    },
+    "scenarios": {
+      "partial_fx_payment_at_cutoff": {
+        "enabled": true,
+        "probability": 0.3
+      },
+      "partially_paid_duplicate": {
+        "enabled": true,
+        "probability": 0.3
+      }
+    },
+    "timezones": [
+      "+05:00",
+      "+03:00",
+      "+00:00",
+      "+01:00",
+      "-03:00",
+      "-05:00",
+      "+09:00",
+      "+05:30"
+    ],
+    "year": 2026
+  },
+  "config_id": "dev-v1-ab04df8c26",
+  "episode_id": "EP-UD5LX4C467",
+  "generation": {
+    "base_currency": "KZT",
+    "clean_counts": {
+      "invoices": 21,
+      "ledger": 423,
+      "payments": 20
+    },
+    "distractor_tags": {
+      "combined": [
+        "D-5GJ7JTEW"
+      ],
+      "refund": [
+        "D-9PJ4DLBJ",
+        "D-AM7MPL86",
+        "D-VH39R75E"
+      ],
+      "split": [
+        "D-2A5USA86",
+        "D-3QPFHYKA",
+        "D-4NK8QQGB",
+        "D-EK47KM6L",
+        "D-FDSQB2VY",
+        "D-TG3XCJPV",
+        "D-V3N4V57U",
+        "D-YQENKPF9"
+      ],
+      "subscription": [
+        "D-6WBMK5CB",
+        "D-9W8UG6M6"
+      ]
+    },
+    "overrides": {},
+    "period_end": "2027-01-01T00:00:00+09:00",
+    "period_start": "2026-12-01T00:00:00+09:00",
+    "plan": {
+      "clean": true,
+      "counts": {
+        "duplicate_invoice": 0,
+        "fx_error": 0,
+        "period_cutoff": 0,
+        "unapplied_payment": 0
+      },
+      "scenarios": []
+    },
+    "steps": [
+      "build_company",
+      "post_ledger(clean)",
+      "invariants.check_clean",
+      "inject",
+      "post_ledger(injected)",
+      "invariants.compare_with_truth",
+      "evidence.check_sufficiency"
+    ],
+    "timezone": "+09:00"
+  },
+  "ledger_diff": {
+    "added": [],
+    "changed": [],
+    "removed": []
+  },
+  "schema_version": "1.0",
+  "seed": 2005,
+  "version": "0.1.0"
+}
