@@ -1,0 +1,355 @@
+{
+  "changes": [
+    {
+      "action": "insert_document",
+      "affected_ids": [
+        "INV-5VZ6ZAJQ"
+      ],
+      "after": {
+        "currency": "GBP",
+        "doc_id": "D-FL4ZCRDL",
+        "due_at": "2026-11-16T17:07:29+05:30",
+        "entity_id": "E-J7JS22CP",
+        "entity_name": "Torfel Systems Ltd",
+        "invoice_id": "INV-5VZ6ZAJQ",
+        "issued_at": "2026-11-02T17:07:29+05:30",
+        "line_items": [
+          {
+            "amount_minor": 3311,
+            "description": "Cloud hosting, order 27656",
+            "line_no": 1,
+            "quantity": 11,
+            "unit_price_minor": 301
+          },
+          {
+            "amount_minor": 36792,
+            "description": "Hardware maintenance, order 27656",
+            "line_no": 2,
+            "quantity": 7,
+            "unit_price_minor": 5256
+          },
+          {
+            "amount_minor": 17339,
+            "description": "Spare parts kit, order 27656",
+            "line_no": 3,
+            "quantity": 7,
+            "unit_price_minor": 2477
+          }
+        ],
+        "total_minor": 57442
+      },
+      "before": null,
+      "copied_from_doc_id": "D-98G3JGYU",
+      "issue_id": "ISS-01",
+      "reason": "invoice re-issued with new ids but identical entity, currency, total and line items, and posted to AR/REVENUE a second time",
+      "target_doc_id": "D-FL4ZCRDL",
+      "type": "duplicate_invoice"
+    },
+    {
+      "action": "insert_document",
+      "affected_ids": [
+        "INV-KV8NNGJW"
+      ],
+      "after": {
+        "currency": "EUR",
+        "doc_id": "D-QB8SK9Z2",
+        "due_at": "2026-12-21T01:11:39+05:30",
+        "entity_id": "E-9Y9EXPDZ",
+        "entity_name": "Jaszen Solutions",
+        "invoice_id": "INV-KV8NNGJW",
+        "issued_at": "2026-11-06T01:11:39+05:30",
+        "line_items": [
+          {
+            "amount_minor": 615,
+            "description": "Software license, order 81949",
+            "line_no": 1,
+            "quantity": 1,
+            "unit_price_minor": 615
+          }
+        ],
+        "total_minor": 615
+      },
+      "before": null,
+      "copied_from_doc_id": "D-63BBAF8F",
+      "issue_id": "ISS-02",
+      "reason": "invoice re-issued with new ids but identical entity, currency, total and line items, and posted to AR/REVENUE a second time",
+      "target_doc_id": "D-QB8SK9Z2",
+      "type": "duplicate_invoice"
+    },
+    {
+      "action": "modify_document",
+      "affected_ids": [
+        "PAY-GZYJRJMG"
+      ],
+      "after": [
+        {
+          "amount_minor": 121729,
+          "invoice_id": "INV-CTAUSUFD"
+        }
+      ],
+      "before": [
+        {
+          "amount_minor": 160171,
+          "invoice_id": "INV-CTAUSUFD"
+        }
+      ],
+      "field": "invoice_refs",
+      "issue_id": "ISS-03",
+      "reason": "receipt not (fully) applied to the invoices it settles: the unapplied remainder sits on UNAPPLIED_CASH while the invoices stay open in AR",
+      "target_doc_id": "D-53ZM953R",
+      "type": "unapplied_payment",
+      "variant": "partial"
+    }
+  ],
+  "config": {
+    "base_currencies": [
+      "KZT",
+      "USD",
+      "EUR"
+    ],
+    "clean_probability": 0.25,
+    "config_name": "train-v1",
+    "distractors": {
+      "boundary_timezone": [
+        0,
+        2
+      ],
+      "refunds": [
+        0,
+        3
+      ],
+      "subscriptions": [
+        1,
+        3
+      ]
+    },
+    "errors": {
+      "duplicate_invoice": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "fx_error": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": false
+      },
+      "period_cutoff": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": false
+      },
+      "unapplied_payment": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      }
+    },
+    "foreign_currencies": [
+      "USD",
+      "EUR",
+      "JPY",
+      "KWD",
+      "GBP"
+    ],
+    "foreign_share": 0.3,
+    "max_documents": 200,
+    "max_errors": 12,
+    "max_ledger_rows": 2000,
+    "n_background_txns": [
+      80,
+      280
+    ],
+    "n_entities": [
+      6,
+      18
+    ],
+    "n_invoices": [
+      20,
+      55
+    ],
+    "payment_mix": {
+      "combined": 0.15,
+      "full": 0.45,
+      "split": 0.15,
+      "unpaid": 0.25
+    },
+    "scenarios": {
+      "partial_fx_payment_at_cutoff": {
+        "enabled": false,
+        "probability": 0.0
+      },
+      "partially_paid_duplicate": {
+        "enabled": false,
+        "probability": 0.0
+      }
+    },
+    "timezones": [
+      "+05:00",
+      "+03:00",
+      "+00:00",
+      "+01:00",
+      "-03:00",
+      "-05:00",
+      "+09:00",
+      "+05:30"
+    ],
+    "year": 2026
+  },
+  "config_id": "train-v1-a48a4f9c6a",
+  "episode_id": "EP-3UVSD38CMM",
+  "generation": {
+    "base_currency": "EUR",
+    "clean_counts": {
+      "invoices": 30,
+      "ledger": 312,
+      "payments": 22
+    },
+    "distractor_tags": {
+      "combined": [
+        "D-XL3NYM2Y"
+      ],
+      "injected": [
+        "D-FL4ZCRDL",
+        "D-QB8SK9Z2"
+      ],
+      "refund": [
+        "D-2U2R2KNX",
+        "D-XL5D2WU3"
+      ],
+      "split": [
+        "D-6LY35NNZ",
+        "D-CRM8PTCF",
+        "D-HPDJCYXZ"
+      ],
+      "subscription": [
+        "D-4C996BY3",
+        "D-4FHVN5WU",
+        "D-4GS2QTR2",
+        "D-59UPTF9P",
+        "D-AWE7ACVU",
+        "D-GK8WGY9E",
+        "D-PTRHEKZS",
+        "D-SR5RTE3R",
+        "D-X9V85U9D",
+        "D-YKAQNPEA"
+      ]
+    },
+    "overrides": {},
+    "period_end": "2026-12-01T00:00:00+05:30",
+    "period_start": "2026-11-01T00:00:00+05:30",
+    "steps": [
+      "build_company",
+      "post_ledger(clean)",
+      "invariants.check_clean",
+      "inject",
+      "post_ledger(injected)",
+      "invariants.compare_with_truth"
+    ],
+    "timezone": "+05:30"
+  },
+  "ledger_diff": {
+    "added": [
+      {
+        "account": "REVENUE",
+        "credit_minor": 615,
+        "currency": "EUR",
+        "debit_minor": 0,
+        "entity_id": "E-9Y9EXPDZ",
+        "invoice_id": "INV-KV8NNGJW",
+        "payment_id": null,
+        "row_id": "R-4KHG6R62",
+        "timestamp": "2026-11-06T01:11:39+05:30",
+        "txn_id": "T-ZMLSV298"
+      },
+      {
+        "account": "AR",
+        "credit_minor": 0,
+        "currency": "EUR",
+        "debit_minor": 67436,
+        "entity_id": "E-J7JS22CP",
+        "invoice_id": "INV-5VZ6ZAJQ",
+        "payment_id": null,
+        "row_id": "R-GQMD995C",
+        "timestamp": "2026-11-02T17:07:29+05:30",
+        "txn_id": "T-Z5WPHB74"
+      },
+      {
+        "account": "REVENUE",
+        "credit_minor": 67436,
+        "currency": "EUR",
+        "debit_minor": 0,
+        "entity_id": "E-J7JS22CP",
+        "invoice_id": "INV-5VZ6ZAJQ",
+        "payment_id": null,
+        "row_id": "R-JXKHL2DC",
+        "timestamp": "2026-11-02T17:07:29+05:30",
+        "txn_id": "T-Z5WPHB74"
+      },
+      {
+        "account": "UNAPPLIED_CASH",
+        "credit_minor": 38442,
+        "currency": "EUR",
+        "debit_minor": 0,
+        "entity_id": "E-L342ZPY8",
+        "invoice_id": null,
+        "payment_id": "PAY-GZYJRJMG",
+        "row_id": "R-SGUN5G5G",
+        "timestamp": "2026-11-27T13:43:52+05:30",
+        "txn_id": "T-QW3L2LL8"
+      },
+      {
+        "account": "AR",
+        "credit_minor": 0,
+        "currency": "EUR",
+        "debit_minor": 615,
+        "entity_id": "E-9Y9EXPDZ",
+        "invoice_id": "INV-KV8NNGJW",
+        "payment_id": null,
+        "row_id": "R-U9GTUZ3G",
+        "timestamp": "2026-11-06T01:11:39+05:30",
+        "txn_id": "T-ZMLSV298"
+      }
+    ],
+    "changed": [
+      {
+        "after": {
+          "account": "AR",
+          "credit_minor": 121729,
+          "currency": "EUR",
+          "debit_minor": 0,
+          "entity_id": "E-L342ZPY8",
+          "invoice_id": "INV-CTAUSUFD",
+          "payment_id": "PAY-GZYJRJMG",
+          "row_id": "R-Z8GZH5NG",
+          "timestamp": "2026-11-27T13:43:52+05:30",
+          "txn_id": "T-QW3L2LL8"
+        },
+        "before": {
+          "account": "AR",
+          "credit_minor": 160171,
+          "currency": "EUR",
+          "debit_minor": 0,
+          "entity_id": "E-L342ZPY8",
+          "invoice_id": "INV-CTAUSUFD",
+          "payment_id": "PAY-GZYJRJMG",
+          "row_id": "R-Z8GZH5NG",
+          "timestamp": "2026-11-27T13:43:52+05:30",
+          "txn_id": "T-QW3L2LL8"
+        }
+      }
+    ],
+    "removed": []
+  },
+  "schema_version": "1.0",
+  "seed": 1004,
+  "version": "0.1.0"
+}

@@ -1,0 +1,36 @@
+{
+  "episode_id": "EP-2X6HA7EQ9N",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-Y242QWY4",
+          "T-DR2Q968B"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-R6PXGTXW"
+      ],
+      "currency": "KZT",
+      "expected_amount_minor": 804806,
+      "issue_id": "ISS-01",
+      "type": "unapplied_payment"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-KFA8JF67",
+          "T-6LPA7A33"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-WS63NF64"
+      ],
+      "currency": "KZT",
+      "expected_amount_minor": 9142851,
+      "issue_id": "ISS-02",
+      "type": "unapplied_payment"
+    }
+  ],
+  "schema_version": "1.0"
+}

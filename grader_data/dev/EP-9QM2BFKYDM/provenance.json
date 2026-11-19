@@ -1,0 +1,271 @@
+{
+  "changes": [
+    {
+      "action": "insert_document",
+      "affected_ids": [
+        "INV-BN44YK3N"
+      ],
+      "after": {
+        "currency": "EUR",
+        "doc_id": "D-EQS3NHQ5",
+        "due_at": "2026-08-21T12:27:36+01:00",
+        "entity_id": "E-58NGJPU5",
+        "entity_name": "Ostquives Solutions",
+        "invoice_id": "INV-BN44YK3N",
+        "issued_at": "2026-08-07T12:27:36+01:00",
+        "line_items": [
+          {
+            "amount_minor": 124962,
+            "description": "Audit support, order 77924",
+            "line_no": 1,
+            "quantity": 6,
+            "unit_price_minor": 20827
+          }
+        ],
+        "total_minor": 124962
+      },
+      "before": null,
+      "copied_from_doc_id": "D-26EZHEF4",
+      "issue_id": "ISS-01",
+      "reason": "invoice re-issued with new ids but identical entity, currency, total and line items, and posted to AR/REVENUE a second time",
+      "target_doc_id": "D-EQS3NHQ5",
+      "type": "duplicate_invoice"
+    },
+    {
+      "action": "modify_document",
+      "affected_ids": [
+        "PAY-DDB7F2UN"
+      ],
+      "after": null,
+      "before": [
+        {
+          "amount_minor": 969,
+          "invoice_id": "INV-ABJ8PMCB"
+        }
+      ],
+      "field": "invoice_refs",
+      "issue_id": "ISS-02",
+      "reason": "receipt not (fully) applied to the invoices it settles: the unapplied remainder sits on UNAPPLIED_CASH while the invoices stay open in AR",
+      "target_doc_id": "D-7U5AZHRD",
+      "type": "unapplied_payment",
+      "variant": "null"
+    }
+  ],
+  "config": {
+    "base_currencies": [
+      "KZT",
+      "USD",
+      "EUR"
+    ],
+    "clean_probability": 0.25,
+    "config_name": "dev-v1",
+    "distractors": {
+      "boundary_timezone": [
+        0,
+        2
+      ],
+      "refunds": [
+        0,
+        3
+      ],
+      "subscriptions": [
+        1,
+        3
+      ]
+    },
+    "errors": {
+      "duplicate_invoice": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "fx_error": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": false
+      },
+      "period_cutoff": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": false
+      },
+      "unapplied_payment": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      }
+    },
+    "foreign_currencies": [
+      "USD",
+      "EUR",
+      "JPY",
+      "KWD",
+      "GBP"
+    ],
+    "foreign_share": 0.3,
+    "max_documents": 200,
+    "max_errors": 12,
+    "max_ledger_rows": 2000,
+    "n_background_txns": [
+      80,
+      280
+    ],
+    "n_entities": [
+      6,
+      18
+    ],
+    "n_invoices": [
+      20,
+      55
+    ],
+    "payment_mix": {
+      "combined": 0.15,
+      "full": 0.45,
+      "split": 0.15,
+      "unpaid": 0.25
+    },
+    "scenarios": {
+      "partial_fx_payment_at_cutoff": {
+        "enabled": false,
+        "probability": 0.0
+      },
+      "partially_paid_duplicate": {
+        "enabled": false,
+        "probability": 0.0
+      }
+    },
+    "timezones": [
+      "+05:00",
+      "+03:00",
+      "+00:00",
+      "+01:00",
+      "-03:00",
+      "-05:00",
+      "+09:00",
+      "+05:30"
+    ],
+    "year": 2026
+  },
+  "config_id": "dev-v1-f84458f99c",
+  "episode_id": "EP-9QM2BFKYDM",
+  "generation": {
+    "base_currency": "EUR",
+    "clean_counts": {
+      "invoices": 44,
+      "ledger": 619,
+      "payments": 40
+    },
+    "distractor_tags": {
+      "boundary_timezone": [
+        "D-XAGUPGNH"
+      ],
+      "combined": [
+        "D-P9Y59SCS"
+      ],
+      "injected": [
+        "D-EQS3NHQ5"
+      ],
+      "split": [
+        "D-33FGU2AF",
+        "D-74G23SHE",
+        "D-9NXBYCHB",
+        "D-9U5JYEW4",
+        "D-B7MNA4DS",
+        "D-FK3HUFYE",
+        "D-FPAN5ZAY",
+        "D-FXRWPMC8",
+        "D-H7CEH6QL",
+        "D-JDMWY96Q",
+        "D-M57SSX26",
+        "D-QQ7QVXP8",
+        "D-SMETZVFE"
+      ],
+      "subscription": [
+        "D-2M3U2HB5",
+        "D-FT7PUT9P",
+        "D-J5T38TFA",
+        "D-MLPGKGJY",
+        "D-PWKPAT8G",
+        "D-Q6E64GVM"
+      ]
+    },
+    "overrides": {},
+    "period_end": "2026-09-01T00:00:00+01:00",
+    "period_start": "2026-08-01T00:00:00+01:00",
+    "steps": [
+      "build_company",
+      "post_ledger(clean)",
+      "invariants.check_clean",
+      "inject",
+      "post_ledger(injected)",
+      "invariants.compare_with_truth"
+    ],
+    "timezone": "+01:00"
+  },
+  "ledger_diff": {
+    "added": [
+      {
+        "account": "UNAPPLIED_CASH",
+        "credit_minor": 969,
+        "currency": "EUR",
+        "debit_minor": 0,
+        "entity_id": "E-VZUMTEMN",
+        "invoice_id": null,
+        "payment_id": "PAY-DDB7F2UN",
+        "row_id": "R-CM6BKT3X",
+        "timestamp": "2026-08-27T08:49:16+01:00",
+        "txn_id": "T-KETYDBTQ"
+      },
+      {
+        "account": "REVENUE",
+        "credit_minor": 124962,
+        "currency": "EUR",
+        "debit_minor": 0,
+        "entity_id": "E-58NGJPU5",
+        "invoice_id": "INV-BN44YK3N",
+        "payment_id": null,
+        "row_id": "R-TMCGANW2",
+        "timestamp": "2026-08-07T12:27:36+01:00",
+        "txn_id": "T-TRNPSZEA"
+      },
+      {
+        "account": "AR",
+        "credit_minor": 0,
+        "currency": "EUR",
+        "debit_minor": 124962,
+        "entity_id": "E-58NGJPU5",
+        "invoice_id": "INV-BN44YK3N",
+        "payment_id": null,
+        "row_id": "R-ZJKXRLVD",
+        "timestamp": "2026-08-07T12:27:36+01:00",
+        "txn_id": "T-TRNPSZEA"
+      }
+    ],
+    "changed": [],
+    "removed": [
+      {
+        "account": "AR",
+        "credit_minor": 969,
+        "currency": "EUR",
+        "debit_minor": 0,
+        "entity_id": "E-VZUMTEMN",
+        "invoice_id": "INV-ABJ8PMCB",
+        "payment_id": "PAY-DDB7F2UN",
+        "row_id": "R-D5LFPJ36",
+        "timestamp": "2026-08-27T08:49:16+01:00",
+        "txn_id": "T-KETYDBTQ"
+      }
+    ]
+  },
+  "schema_version": "1.0",
+  "seed": 2003,
+  "version": "0.1.0"
+}

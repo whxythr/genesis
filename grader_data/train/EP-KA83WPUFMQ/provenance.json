@@ -1,0 +1,167 @@
+{
+  "changes": [],
+  "config": {
+    "base_currencies": [
+      "KZT",
+      "USD",
+      "EUR"
+    ],
+    "clean_probability": 0.25,
+    "config_name": "train-v1",
+    "distractors": {
+      "boundary_timezone": [
+        0,
+        2
+      ],
+      "refunds": [
+        0,
+        3
+      ],
+      "subscriptions": [
+        1,
+        3
+      ]
+    },
+    "errors": {
+      "duplicate_invoice": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      },
+      "fx_error": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": false
+      },
+      "period_cutoff": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": false
+      },
+      "unapplied_payment": {
+        "count": [
+          0,
+          2
+        ],
+        "enabled": true
+      }
+    },
+    "foreign_currencies": [
+      "USD",
+      "EUR",
+      "JPY",
+      "KWD",
+      "GBP"
+    ],
+    "foreign_share": 0.3,
+    "max_documents": 200,
+    "max_errors": 12,
+    "max_ledger_rows": 2000,
+    "n_background_txns": [
+      80,
+      280
+    ],
+    "n_entities": [
+      6,
+      18
+    ],
+    "n_invoices": [
+      20,
+      55
+    ],
+    "payment_mix": {
+      "combined": 0.15,
+      "full": 0.45,
+      "split": 0.15,
+      "unpaid": 0.25
+    },
+    "scenarios": {
+      "partial_fx_payment_at_cutoff": {
+        "enabled": false,
+        "probability": 0.0
+      },
+      "partially_paid_duplicate": {
+        "enabled": false,
+        "probability": 0.0
+      }
+    },
+    "timezones": [
+      "+05:00",
+      "+03:00",
+      "+00:00",
+      "+01:00",
+      "-03:00",
+      "-05:00",
+      "+09:00",
+      "+05:30"
+    ],
+    "year": 2026
+  },
+  "config_id": "train-v1-a48a4f9c6a",
+  "episode_id": "EP-KA83WPUFMQ",
+  "generation": {
+    "base_currency": "KZT",
+    "clean_counts": {
+      "invoices": 32,
+      "ledger": 313,
+      "payments": 32
+    },
+    "distractor_tags": {
+      "refund": [
+        "D-QRB68HCM",
+        "D-XTNQBSR5"
+      ],
+      "split": [
+        "D-3F3P7DKM",
+        "D-4HZ45V8X",
+        "D-7HLSN9HL",
+        "D-A5KNL5U2",
+        "D-ANQP99LG",
+        "D-BQKTSL67",
+        "D-E29DX28V",
+        "D-P9A3D3VB",
+        "D-PYRUUTPN",
+        "D-RXCRT7EB",
+        "D-TXK5XG8M",
+        "D-WYK8VSE2"
+      ],
+      "subscription": [
+        "D-7RX6BQH5",
+        "D-ATBE4TGD",
+        "D-B22VCTD3",
+        "D-FVTTVSWK",
+        "D-JHPQ6L6T",
+        "D-LHNKGFYL",
+        "D-N3H9Z2D6",
+        "D-NSQH5X95",
+        "D-ZWSDXMGY"
+      ]
+    },
+    "overrides": {},
+    "period_end": "2026-04-01T00:00:00+05:00",
+    "period_start": "2026-03-01T00:00:00+05:00",
+    "steps": [
+      "build_company",
+      "post_ledger(clean)",
+      "invariants.check_clean",
+      "inject",
+      "post_ledger(injected)",
+      "invariants.compare_with_truth"
+    ],
+    "timezone": "+05:00"
+  },
+  "ledger_diff": {
+    "added": [],
+    "changed": [],
+    "removed": []
+  },
+  "schema_version": "1.0",
+  "seed": 1005,
+  "version": "0.1.0"
+}

@@ -1,0 +1,17 @@
+{
+  "config_id": "train-v1-a48a4f9c6a",
+  "episodes": [
+    "EP-3UVSD38CMM",
+    "EP-6PQPJBDVTY",
+    "EP-7M7HC3ZRQM",
+    "EP-7NQ94LBD4R",
+    "EP-C7NHVB7QSD",
+    "EP-D3UHC8GZ7K",
+    "EP-KA83WPUFMQ",
+    "EP-NVKMN453QC",
+    "EP-P8V5422DDN",
+    "EP-QZ7TD3HD8B"
+  ],
+  "split": "train",
+  "version": "0.1.0"
+}

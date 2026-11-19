@@ -1,0 +1,22 @@
+{
+  "episode_id": "EP-XW68PTF248",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-9BU64UC7",
+          "D-EGQFYD3T",
+          "T-QUKU7PME"
+        ]
+      ],
+      "affected_ids": [
+        "INV-VM55RWGH"
+      ],
+      "currency": "KZT",
+      "expected_amount_minor": 6433808,
+      "issue_id": "ISS-01",
+      "type": "duplicate_invoice"
+    }
+  ],
+  "schema_version": "1.0"
+}

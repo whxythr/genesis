@@ -1,0 +1,37 @@
+{
+  "episode_id": "EP-9QM2BFKYDM",
+  "issues": [
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-26EZHEF4",
+          "D-EQS3NHQ5",
+          "T-TRNPSZEA"
+        ]
+      ],
+      "affected_ids": [
+        "INV-BN44YK3N"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 124962,
+      "issue_id": "ISS-01",
+      "type": "duplicate_invoice"
+    },
+    {
+      "acceptable_evidence_sets": [
+        [
+          "D-7U5AZHRD",
+          "T-KETYDBTQ"
+        ]
+      ],
+      "affected_ids": [
+        "PAY-DDB7F2UN"
+      ],
+      "currency": "EUR",
+      "expected_amount_minor": 969,
+      "issue_id": "ISS-02",
+      "type": "unapplied_payment"
+    }
+  ],
+  "schema_version": "1.0"
+}
