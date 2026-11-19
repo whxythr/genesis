@@ -57,3 +57,14 @@ def test_random_explorer_is_deterministic():
         env.close()
     assert [r["action"] for r in a] == [r["action"] for r in b]
     assert [r["observation"] for r in a] == [r["observation"] for r in b]
+
+
+def test_trajectory_rows_match_schema(results):
+    from audit_env import schema
+    for runs in results.values():
+        for rows, _ in runs:
+            assert rows[0]["step"] == 0 and rows[0]["action"] is None
+            for r in rows:
+                assert not schema.validate(r, "trajectory"), schema.validate(r, "trajectory")
+                assert not schema.validate(r["observation"], "observation")
+            assert rows[-1]["terminated"] or rows[-1]["truncated"]

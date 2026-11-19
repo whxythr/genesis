@@ -1,4 +1,4 @@
-"""Command line: python -m audit_env {generate,validate,baselines,transform,invariance,check}."""
+"""Command line: python -m audit_env {generate,validate,baselines,transform,invariance,demo,check}."""
 
 from __future__ import annotations
 
@@ -135,6 +135,7 @@ def cmd_baselines(split: str, mode: str = "train", quiet: bool = False) -> list[
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "grader_log.jsonl").unlink(missing_ok=True)
     summaries: list[dict] = []
+    all_rows: list[dict] = []
     for pol in policies():
         env = AuditEnv(mode=mode, grader_log=out_dir / "grader_log.jsonl")
         rows_all, pol_summaries = [], []
@@ -151,8 +152,12 @@ def cmd_baselines(split: str, mode: str = "train", quiet: bool = False) -> list[
                     s.update(reward=r["reward"], invalid_reason=r["invalid_reason"], **r["metrics"])
         finally:
             env.close()
-        write_jsonl(rows_all, out_dir / f"{pol.name}.jsonl")
+        all_rows += rows_all
         summaries += pol_summaries
+    for stale in out_dir.glob("*.jsonl"):
+        if stale.name not in ("trajectories.jsonl", "grader_log.jsonl"):
+            stale.unlink()
+    write_jsonl(all_rows, out_dir / "trajectories.jsonl")
     _write_text(out_dir / "summary.json", jsonutil.pretty([{k: v for k, v in s.items() if k != "time_s"} for s in summaries]))
     if not quiet:
         print(f"\nBaselines on {split}, mode={mode} ({len(eids)} episodes):")
@@ -246,6 +251,10 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--out-split", default=None)
     sub.add_parser("invariance")
+    p = sub.add_parser("demo")
+    p.add_argument("--split", default=None)
+    p.add_argument("--episode", default=None)
+    p.add_argument("--delay", type=float, default=0.0)
     sub.add_parser("check")
     args = ap.parse_args(argv)
     if args.cmd == "generate":
@@ -261,6 +270,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "invariance":
         return 1 if cmd_invariance() else 0
+    if args.cmd == "demo":
+        from .demo import DEFAULT_EPISODE, run_demo
+        return run_demo(args.split or DEFAULT_EPISODE[0], args.episode or DEFAULT_EPISODE[1], args.delay)
     if args.cmd == "check":
         return cmd_check()
     return 2
