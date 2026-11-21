@@ -109,7 +109,7 @@
     "reward": 1.0,
     "seed": null,
     "steps": 1,
-    "tp": 4
+    "tp": 7
   },
   {
     "episode_id": "EP-NYB5N2C638",
@@ -266,10 +266,10 @@
     "precision": 1.0,
     "recall": 1.0,
     "return": 0.0,
-    "reward": 0.954,
+    "reward": 0.96,
     "seed": null,
-    "steps": 24,
-    "tp": 4
+    "steps": 21,
+    "tp": 7
   },
   {
     "episode_id": "EP-NYB5N2C638",
@@ -418,7 +418,7 @@
   {
     "episode_id": "EP-JFTD788XPQ",
     "f1": 0.0,
-    "fn": 4,
+    "fn": 7,
     "fp": 0,
     "invalid_reason": null,
     "outcome": "submitted",
@@ -578,7 +578,7 @@
   {
     "episode_id": "EP-JFTD788XPQ",
     "f1": 0.0,
-    "fn": 4,
+    "fn": 7,
     "fp": 30,
     "invalid_reason": null,
     "outcome": "submitted",

@@ -61,7 +61,10 @@
       "issues": [
         "duplicate_invoice",
         "fx_error",
+        "fx_error",
         "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment",
         "unapplied_payment"
       ],
       "scenarios": [

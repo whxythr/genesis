@@ -6,7 +6,7 @@
     "unapplied_rule": "a receipt's unapplied amount = amount_minor - sum(invoice_refs) + amounts applied to duplicate invoices (cash on an invoice that must be voided is unapplied)"
   },
   "fx": {
-    "base_currency": "EUR",
+    "base_currency": "KZT",
     "rate_date_rule": "use the fx.csv row whose date equals the calendar date of the document timestamp (invoice issued_at / payment timestamp) in the company timezone",
     "rate_semantics": "rate = units of target_currency per 1 unit of source_currency",
     "same_currency": "no conversion, rate 1",
@@ -26,14 +26,14 @@
       "UNAPPLIED_CASH": "cash received but not applied to any invoice"
     },
     "csv_null": "empty field",
-    "currency": "EUR",
+    "currency": "KZT",
     "posting": "invoice: Dr AR / Cr REVENUE; receipt: Dr CASH / Cr AR per invoice_ref (+ Cr UNAPPLIED_CASH for any unapplied part, FX_GAIN_LOSS balances); refund: Dr REFUNDS / Cr CASH"
   },
   "period": {
-    "end": "2026-03-01T00:00:00+05:30",
+    "end": "2026-05-01T00:00:00+09:00",
     "rule": "an operation belongs to the period iff start <= timestamp < end, comparing instants; calendar dates are taken in the company timezone",
-    "start": "2026-02-01T00:00:00+05:30",
-    "timezone": "+05:30"
+    "start": "2026-04-01T00:00:00+09:00",
+    "timezone": "+09:00"
   },
   "rounding": {
     "currency_exponents": {

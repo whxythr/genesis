@@ -235,6 +235,7 @@
       "ledger": 248,
       "payments": 19
     },
+    "company_attempt": 0,
     "distractor_tags": {
       "boundary_timezone": [
         "D-8MENA9J9"

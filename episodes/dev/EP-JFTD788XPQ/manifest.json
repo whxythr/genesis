@@ -1,5 +1,5 @@
 {
-  "base_currency": "EUR",
+  "base_currency": "KZT",
   "currency_exponents": {
     "EUR": 2,
     "GBP": 2,
@@ -8,20 +8,20 @@
     "KZT": 2,
     "USD": 2
   },
-  "document_count": 80,
+  "document_count": 88,
   "episode_id": "EP-JFTD788XPQ",
-  "period_end": "2026-03-01T00:00:00+05:30",
-  "period_start": "2026-02-01T00:00:00+05:30",
+  "period_end": "2026-05-01T00:00:00+09:00",
+  "period_start": "2026-04-01T00:00:00+09:00",
   "record_counts": {
-    "fx": 84,
-    "invoices": 43,
-    "ledger": 520,
-    "payments": 37
+    "fx": 44,
+    "invoices": 45,
+    "ledger": 612,
+    "payments": 43
   },
   "rounding_rules": {
     "fx_rate_format": "decimal string",
     "mode": "ROUND_HALF_UP"
   },
   "schema_version": "1.0",
-  "timezone": "+05:30"
+  "timezone": "+09:00"
 }

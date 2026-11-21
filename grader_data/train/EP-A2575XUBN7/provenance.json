@@ -112,6 +112,7 @@
       "ledger": 510,
       "payments": 45
     },
+    "company_attempt": 0,
     "distractor_tags": {
       "boundary_timezone": [
         "D-CBWS4NW9"

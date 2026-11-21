@@ -342,6 +342,7 @@
       "ledger": 469,
       "payments": 48
     },
+    "company_attempt": 0,
     "distractor_tags": {
       "boundary_timezone": [
         "D-HQ978QBB"

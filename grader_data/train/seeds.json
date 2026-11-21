@@ -57,8 +57,11 @@
       "episode_id": "EP-9VEARKHCQM",
       "issues": [
         "fx_error",
+        "fx_error",
         "period_cutoff",
         "period_cutoff",
+        "period_cutoff",
+        "unapplied_payment",
         "unapplied_payment"
       ],
       "scenarios": [
