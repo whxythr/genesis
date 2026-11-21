@@ -41,12 +41,16 @@ Windows без `make`: `.\scripts\check.ps1` (то же самое, что `make
 
 `make check` завершается ненулевым кодом при любой ошибке и делает:
 
-1. `pytest -q` — 261 тест: контракт, изоляция, генератор, matcher, атаки на награду,
+1. `pytest -q` — все тесты: контракт, изоляция, генератор, matcher, атаки на награду,
    детерминизм, инвариантность, сценарии, а также **дословные проверки жюри** через
    `judge_adapter.py`: C01–C20, тесты награды 1–20 и примеры M01–M12, матрица D01–D20,
-   парные проверки P01–P20 (`tests/test_judge_*.py`);
+   парные проверки P01–P20 (`tests/test_judge_*.py`) и файловый верификатор с 14 видами
+   испорченных данных (`tests/test_verify.py`);
 2. валидацию 10 train + 10 dev эпизодов: инварианты, совпадение с эталоном, достаточность
    доказательств, **байт-в-байт** совпадение с повторной генерацией;
+   и **независимую файловую проверку** каждого эпизода (`python -m audit_env verify`): книги до
+   инъекции восстанавливаются из provenance и сходятся, после — ровно заявленные расхождения,
+   truth ↔ записанные изменения, доказательства достаточны и достижимы инструментами, форматы §03;
 3. прогон 4 базовых политик (train — открытый режим, dev — закрытый eval) с записью траекторий;
 4. таблицу диагностики P / R / F1 / награда / шаги / время по политикам;
 5. 60 парных проверок: эпизод против его копии с перемешанными строками и новыми ID.
@@ -73,13 +77,17 @@ ja.score_episode("/jury/ep1", findings, inspection_steps)  # {"tp","fp","fn","pr
 | `reset(seed, config)` | `mode: "closed"` (= наш `eval`) или `"train"`; с `episode_dir` грузит **именно этот** эпизод (повторный reset — заново), без него в train генерирует по `seed` + `team_config` |
 | первое наблюдение | `{"task", "manifest", "policy", "remaining_steps": 100}`; описание инструментов — в тексте `task` |
 | следующие наблюдения | `{"result": value \| null, "error": null \| {"code", "message"}, "remaining_steps"}` |
-| `list_records` | args `table` ∈ `ledger`, `invoices`, `payments`, `fx`; `cursor` (первый — `null`); `limit` 1…50; опц. `filter`. Результат `{"records": [...], "next_cursor": str \| null}`; у счетов в списке — сводка без `line_items` |
+| `list_records` | args `table` ∈ `ledger`, `invoices`, `payments`, `fx`; `cursor` (первый — `null`); `limit` 1…50; опц. `filter`. Результат `{"records": [...], "next_cursor": str \| null}`; записи — ровно как в открытых файлах (все поля §03, у счетов — с `line_items`), в порядке файла |
 | `get_record` | args `table`, `id`: ledger — `row_id`; invoices — `invoice_id` (или `doc_id`); payments — `payment_id` (или `doc_id`); fx — `fx_id` (или `date:source:target`). Результат — объект записи |
 | `get_document` | args `doc_id` счёта или платежа. Результат — полный документ |
 | `calculator` | args `expression` (`+ - * / ( )`, десятичные). Результат — десятичная строка, `0.1+0.2` → `"0.3"` |
 | `submit` | args `{"findings": <findings.json>}`. Результат `{"accepted": true}` или ошибка `INVALID_FINDINGS` (структура), без оценки правильности |
-| награда / info | train: терминальная награда и метрики в `info`; closed: `reward = 0.0` всегда, `info = {}` |
-| `score_episode` | закрытый вызов на стороне жюри; невалидная структура → `return = -1`, остальные поля `null`, запись в `runs/judge_grader_log.jsonl` (путь меняется переменной `AUDIT_ENV_GRADER_LOG`) |
+| награда / info | train: терминальная награда в `reward` (по ходу 0); closed: `reward = 0.0` на каждом шаге, включая завершение. `info = {}` всегда в обоих режимах: TP/FP/FN раскрыли бы число ошибок в эталоне |
+| `score_episode` | закрытый вызов на стороне жюри; невалидная структура → `return = -1`, остальные поля `null`; `findings = None` = «submit не было» (лимит шагов/времени) → оценка пустого ответа. Каждый вызов и каждый эпизод среды пишутся в журнал оценщика `runs/judge_grader_log.jsonl` (путь: переменная `AUDIT_ENV_GRADER_LOG`). Для оценки нужен только `truth.json` (формат — [schemas/truth.schema.json](schemas/truth.schema.json)); `provenance.json` необязателен |
+
+JSON-схема всех форм адаптера (действие, первое и последующие наблюдения, ошибка, результат
+`list_records`, результат `score_episode`) — [schemas/judge_contract.schema.json](schemas/judge_contract.schema.json);
+каждое наблюдение проверяется по ней в тестах.
 
 Четыре типа ошибок (точные строки `type`): `duplicate_invoice`, `unapplied_payment`, `fx_error`,
 `period_cutoff`. Каноничные `affected_ids` и суммы — в [docs/DESIGN.md](docs/DESIGN.md) (D9, D12, D13).
@@ -174,6 +182,7 @@ inspection_steps = шаги до submit (включая ошибочные), с�
 | `make check` | всё вышеперечисленное |
 | `make demo` | скриптовый аудитор проходит эпизод шаг за шагом, затем P/R/F1/награда и вердикт по каждому выводу |
 | `make generate` / `make validate` | пересоздать / проверить train и dev |
+| `python -m audit_env verify <каталог эпизода> ...` или `make verify` | независимая проверка каталога эпизода только по файлам (6 условий Блока 2), работает и на копии жюри; формат provenance — [schemas/provenance.schema.json](schemas/provenance.schema.json) |
 | `make baselines` | 4 политики: train открыто, dev закрыто |
 | `make invariance` | парные проверки порядка строк и ID |
 | `python -m audit_env transform --split dev --seed 7` | копия набора с перемешанными строками и новыми ID (маппинг — только у оценщика) |
