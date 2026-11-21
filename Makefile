@@ -1,7 +1,7 @@
 PY ?= python
 export PYTHONPATH := src
 
-.PHONY: check test generate validate baselines invariance demo
+.PHONY: check test generate validate verify baselines invariance demo
 
 check:          ## everything: tests, data validation, 4 baselines, paired invariance
 	$(PY) -m audit_env check
@@ -16,6 +16,10 @@ generate:       ## regenerate the 10 train + 10 dev episodes
 validate:
 	$(PY) -m audit_env validate --split train
 	$(PY) -m audit_env validate --split dev
+
+verify:         ## independent file-level check of every episode (Block 2 conditions)
+	$(PY) -m audit_env verify --split train
+	$(PY) -m audit_env verify --split dev
 
 baselines:      ## train in open mode, dev in closed eval mode
 	$(PY) -m audit_env baselines --split train --mode train

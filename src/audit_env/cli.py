@@ -1,4 +1,4 @@
-"""Command line: python -m audit_env {generate,validate,baselines,transform,invariance,demo,check}."""
+"""Command line: python -m audit_env {generate,validate,verify,baselines,transform,invariance,demo,check}."""
 
 from __future__ import annotations
 
@@ -206,6 +206,21 @@ def cmd_invariance(splits=("train", "dev"), seed: int = 7) -> int:
     return failures
 
 
+def cmd_verify(paths: list[str] | None = None, split: str | None = None) -> int:
+    """Independent file-level verification (audit_env.verify) of episode directories."""
+    from .verify import verify_dir
+    targets: list[tuple[Path, Path | None]] = [(Path(p), None) for p in paths or []]
+    if split:
+        targets += [(EPISODES / split / e, GRADER / split / e) for e in _episode_ids(EPISODES, split)]
+    bad = 0
+    for open_dir, closed_dir in targets:
+        problems = verify_dir(open_dir, closed_dir)
+        bad += bool(problems)
+        print(f"[verify] {'OK  ' if not problems else 'FAIL'} {open_dir.name}"
+              + "".join(f"\n         - {x}" for x in problems[:20]), flush=True)
+    return bad
+
+
 def cmd_check() -> int:
     steps = []
 
@@ -219,6 +234,8 @@ def cmd_check() -> int:
         if not _episode_ids(EPISODES, split):
             cmd_generate(split)
         stage(f"validate {split} (invariants, truth, evidence, byte-exact regeneration)", cmd_validate(split) == 0)
+        stage(f"verify {split} from files only (pre-injection rebuilt from provenance, declared "
+              f"discrepancies, truth vs changes, evidence reachable, formats)", cmd_verify(split=split) == 0)
     ok = True
     for split, mode in (("train", "train"), ("dev", "eval")):
         summaries = cmd_baselines(split, mode)
@@ -251,6 +268,9 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--seed", type=int, default=7)
     p.add_argument("--out-split", default=None)
     sub.add_parser("invariance")
+    p = sub.add_parser("verify", help="independent check of episode directories (Block 2 conditions)")
+    p.add_argument("dirs", nargs="*")
+    p.add_argument("--split", default=None)
     p = sub.add_parser("demo")
     p.add_argument("--split", default=None)
     p.add_argument("--episode", default=None)
@@ -270,6 +290,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.cmd == "invariance":
         return 1 if cmd_invariance() else 0
+    if args.cmd == "verify":
+        if not args.dirs and not args.split:
+            ap.error("verify: give episode directories or --split")
+        return 1 if cmd_verify(args.dirs, args.split) else 0
     if args.cmd == "demo":
         from .demo import DEFAULT_EPISODE, run_demo
         return run_demo(args.split or DEFAULT_EPISODE[0], args.episode or DEFAULT_EPISODE[1], args.delay)

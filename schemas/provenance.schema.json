@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "provenance",
+  "description": "Closed generation history of one episode. Together with the open files it lets anyone rebuild the PRE-injection books and re-check them: undo every change (insert_document* -> remove the document target_doc_id; modify_document / document_state -> set document target_doc_id.<field> back to `before`; modify_document+override_posting with an object `before` -> replace the document by `before`; override_posting -> documents unchanged) and undo ledger_diff (drop `added` rows, restore `removed` rows, put `changed[].before` back). The reference implementation is audit_env/verify.py (python -m audit_env verify <episode_dir>).",
+  "type": "object",
+  "required": ["schema_version", "episode_id", "seed", "version", "config_id", "config", "generation", "changes", "ledger_diff"],
+  "properties": {
+    "schema_version": {"type": "string"},
+    "episode_id": {"type": "string"},
+    "seed": {"type": "integer", "minimum": 0},
+    "version": {"type": "string", "description": "audit_env.__version__ that generated the episode"},
+    "config_id": {"type": "string", "description": "config_name + hash of the resolved config"},
+    "config": {"type": "object", "description": "fully resolved generator config (configs/default.json merged with overrides)"},
+    "generation": {
+      "type": "object",
+      "required": ["steps", "base_currency", "timezone", "period_start", "period_end", "clean_counts", "distractor_tags", "overrides", "plan", "company_attempt"],
+      "properties": {
+        "steps": {"type": "array", "items": {"type": "string"}},
+        "base_currency": {"type": "string"},
+        "timezone": {"type": "string"},
+        "period_start": {"type": "string"},
+        "period_end": {"type": "string"},
+        "clean_counts": {"type": "object", "description": "row/document counts of the pre-injection books",
+                         "required": ["ledger", "invoices", "payments"],
+                         "properties": {"ledger": {"type": "integer"}, "invoices": {"type": "integer"}, "payments": {"type": "integer"}}},
+        "distractor_tags": {"type": "object", "description": "tag -> doc_ids of correct-but-suspicious cases (split, combined, refund, subscription, boundary_timezone) and injected docs"},
+        "overrides": {"type": "object", "description": "doc_id -> posting override used for injection (rate_date / posting_ts)"},
+        "plan": {"type": "object", "description": "clean flag, per-type error counts, scenarios, optional variants - decided before generation"},
+        "company_attempt": {"type": "integer", "minimum": 0, "description": "deterministic rebuild index (0 = original salts), see DESIGN D48"}
+      }
+    },
+    "changes": {
+      "type": "array",
+      "description": "one entry per minimal causal change; every truth issue has >= 1 change with its issue_id",
+      "items": {
+        "type": "object",
+        "required": ["type", "affected_ids", "action", "target_doc_id", "before", "after", "reason", "issue_id"],
+        "properties": {
+          "type": {"type": "string", "enum": ["duplicate_invoice", "unapplied_payment", "fx_error", "period_cutoff"]},
+          "affected_ids": {"type": "array", "items": {"type": "string"}},
+          "action": {"type": "string", "enum": ["insert_document", "insert_document+override_posting", "modify_document",
+                                                "document_state", "modify_document+override_posting", "override_posting"]},
+          "target_doc_id": {"type": "string"},
+          "field": {"type": "string", "description": "changed document field (invoice_refs, issued_at, timestamp) or posting parameter (rate_date, posting_ts)"},
+          "before": {"description": "value before the change: null for an inserted document; the field value; or the whole document"},
+          "after": {"description": "value after the change"},
+          "posted_minor": {"type": "object", "description": "fx_error: base amount posted before/after"},
+          "posting_ts": {"type": "string"},
+          "copied_from_doc_id": {"type": "string", "description": "duplicate_invoice: the original document"},
+          "variant": {"type": "string"},
+          "scenario": {"type": "string", "enum": ["partial_fx_payment_at_cutoff", "partially_paid_duplicate"]},
+          "reason": {"type": "string"},
+          "issue_id": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "ledger_diff": {
+      "type": "object",
+      "required": ["added", "removed", "changed"],
+      "properties": {
+        "added": {"type": "array", "items": {"type": "object"}, "description": "rows present only after injection"},
+        "removed": {"type": "array", "items": {"type": "object"}, "description": "rows present only before injection"},
+        "changed": {"type": "array", "items": {"type": "object", "required": ["before", "after"]}}
+      }
+    }
+  }
+}
