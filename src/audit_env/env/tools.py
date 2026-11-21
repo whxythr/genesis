@@ -39,7 +39,7 @@ TOOL_HELP = {
                                         "ledger(txn_id, account, entity_id, invoice_id, payment_id), "
                                         "invoices(entity_id, currency, doc_id), "
                                         "payments(entity_id, currency, kind, doc_id), fx(date, source_currency)"},
-                     "returns": "records, total, next_cursor; invoices are summaries without line_items"},
+                     "returns": "records (full records as in the open files), total, next_cursor"},
     "get_record": {"args": {"table": "ledger | invoices | payments | fx",
                             "id": "row_id | invoice_id | payment_id | fx_id"}},
     "get_document": {"args": {"doc_id": "doc_id of an invoice or payment"},

@@ -76,7 +76,7 @@ class AuditEnv:
         if "episode_dir" in config:
             # load exactly this episode (judge protocol); the path goes to the grader
             # process only and is not kept by the environment
-            source = {"kind": "dir", "path": str(config["episode_dir"])}
+            source = {"kind": "dir", "path": str(Path(config["episode_dir"]).resolve())}
         elif "episode" in config:
             source = {"kind": "files", **config["episode"]}
         else:

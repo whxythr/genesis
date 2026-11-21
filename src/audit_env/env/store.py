@@ -31,19 +31,15 @@ class StoreError(Exception):
         self.code = code
 
 
-def _invoice_summary(inv: dict) -> dict:
-    out = {k: v for k, v in inv.items() if k != "line_items"}
-    out["line_item_count"] = len(inv["line_items"])
-    return out
-
-
 class Store:
     def __init__(self, bundle: dict) -> None:
         self.manifest = jsonutil.deep_copy(bundle["manifest"])
         self.policy = jsonutil.deep_copy(bundle["policy"])
+        # records are returned exactly as in the open files (all §03 fields, invoices with
+        # line_items), in file order
         self._rows = {
             "ledger": [jsonutil.deep_copy(r) for r in bundle["ledger"]],
-            "invoices": [_invoice_summary(jsonutil.deep_copy(i)) for i in bundle["invoices"]],
+            "invoices": [jsonutil.deep_copy(i) for i in bundle["invoices"]],
             "payments": [jsonutil.deep_copy(p) for p in bundle["payments"]],
             "fx": [jsonutil.deep_copy(r) for r in bundle["fx"]],
         }

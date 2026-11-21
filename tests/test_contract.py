@@ -42,7 +42,7 @@ def test_each_tool_works(env):
     assert o["ok"] and o["result"]["record"] == row
     o, *_ = env.step({"tool": "list_records", "args": {"table": "invoices"}})
     inv = o["result"]["records"][0]
-    assert "line_items" not in inv and "line_item_count" in inv
+    assert inv["line_items"]  # full record exactly as in invoices.jsonl (§03 fields)
     o, *_ = env.step({"tool": "get_document", "args": {"doc_id": inv["doc_id"]}})
     assert o["ok"] and o["result"]["doc_type"] == "invoice" and o["result"]["document"]["line_items"]
     o, *_ = env.step({"tool": "calculator", "args": {"expression": "(10 + 5) / 4"}})

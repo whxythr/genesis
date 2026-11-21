@@ -27,7 +27,7 @@ from pathlib import Path
 from .. import jsonutil
 from ..config import REPO_ROOT, ConfigError
 from ..generator.episode import GenerationError, generate_episode
-from ..generator.writer import read_closed, read_open
+from ..generator.writer import closed_dir_of, read_closed, read_open, read_truth_for_grading
 from .core import grade
 
 _SPLIT_RE = re.compile(r"^[a-z0-9_-]{1,32}$")
@@ -108,11 +108,11 @@ class Service:
                 if not isinstance(path, str) or not path:
                     return {"ok": False, "error": "BAD_SOURCE"}
                 d = Path(path)
-                closed_dir = d / "closed" if (d / "closed" / "truth.json").is_file() else d
+                closed_dir = closed_dir_of(d)
                 if not (d / "manifest.json").is_file() or not (closed_dir / "truth.json").is_file():
                     return {"ok": False, "error": "NOT_FOUND"}
                 bundle = read_open(d)
-                truth, provenance = read_closed(closed_dir)
+                truth, provenance = read_truth_for_grading(closed_dir)
                 config_id = provenance.get("config_id", "external") if isinstance(provenance, dict) else "external"
             else:
                 return {"ok": False, "error": "BAD_SOURCE"}

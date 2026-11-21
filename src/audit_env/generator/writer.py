@@ -180,3 +180,32 @@ def read_closed(directory: Path) -> tuple[dict, dict]:
     with open(directory / "provenance.json", encoding="utf-8") as fh:
         provenance = json.load(fh)
     return truth, provenance
+
+
+def closed_dir_of(episode_dir: Path) -> Path:
+    """Closed files live in ``<dir>/closed/`` if present, else next to the open files."""
+    return episode_dir / "closed" if (episode_dir / "closed" / "truth.json").is_file() else episode_dir
+
+
+def read_truth_for_grading(closed_dir: Path) -> tuple[dict, dict]:
+    """Truth (+ provenance if present) for scoring an episode directory.
+
+    Grading needs only truth.json; provenance.json is optional here (a hand-made grader
+    fixture may omit it). Accepted truth shapes: ``{"issues": [...]}`` (ours) or a bare
+    list of issues; an issue without ``issue_id`` gets ``ISS-<index>`` in file order.
+    """
+    with open(closed_dir / "truth.json", encoding="utf-8") as fh:
+        truth = json.load(fh)
+    if isinstance(truth, list):
+        truth = {"issues": truth}
+    issues = []
+    for n, issue in enumerate(truth.get("issues") or [], start=1):
+        issue = dict(issue)
+        issue.setdefault("issue_id", f"ISS-{n:02d}")
+        issues.append(issue)
+    truth = dict(truth, issues=issues)
+    provenance: dict = {}
+    if (closed_dir / "provenance.json").is_file():
+        with open(closed_dir / "provenance.json", encoding="utf-8") as fh:
+            provenance = json.load(fh)
+    return truth, provenance

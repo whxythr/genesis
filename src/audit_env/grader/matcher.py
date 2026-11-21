@@ -5,21 +5,27 @@ A finding f has an EDGE to issue t iff ALL hold:
   2. set(f.affected_ids) == set(t.affected_ids)          (exact strings, canonical set)
   3. f.currency == t.currency                            (exact string)
   4. |f.claimed_amount_minor - t.expected_amount_minor| <= TOLERANCE_MINOR[t.type]
-  5. every evidence id exists in the open records of the episode, and the evidence
-     (after alias resolution, see below) contains at least one complete acceptable
-     evidence set of t.  One unknown evidence id -> no edge (FP), even if a full set
-     is also present.
+  5. every evidence id exists in the open records of the episode, and the evidence covers
+     at least one complete acceptable evidence set of t.  One unknown evidence id -> no
+     edge (FP), even if a full set is also present.
 
 Amount tolerance tau: 0 minor units for every type (exact integer comparison).  All
 expected amounts are produced by integer arithmetic with the published ROUND_HALF_UP
 rule (policy.json), so an agent that follows the policy obtains them exactly.
 
-Evidence alias resolution (documented): an evidence id may name a record by any of its
-open identifiers - invoice: doc_id or invoice_id; payment: doc_id or payment_id;
-ledger: row_id (any row of the transaction) or txn_id; fx: fx_id.  entity_id stands
-for itself.  Resolution is per namespace: if the same string is an id in two
-namespaces it resolves to both targets, so the check never depends on which
-namespace a renaming happened to put first.
+Existing evidence ids: any open identifier - doc_id, invoice_id, payment_id, entity_id,
+row_id, txn_id, fx_id, or the fx key "date:source_currency:target_currency".
+
+Coverage of a required id r of an acceptable set (literal subset semantics, plus one
+documented convenience):
+  - r is covered if r itself is among the submitted evidence ids;
+  - if r is a CANONICAL id - doc_id of a document, txn_id of a ledger transaction or
+    fx_id of a rate row, the forms our truth uses - it is also covered by another open
+    identifier of the same object: invoice_id/payment_id for a doc_id, any row_id of
+    the transaction for a txn_id, the "date:source:target" key for an fx_id.
+  A required row_id, invoice_id, payment_id, entity_id or fx key is covered only by
+  itself, so {row A, row B} is never covered by row A alone.  Identifiers are resolved
+  per namespace: when one string is an id in two namespaces it stands for both.
 
 Matching: maximum-cardinality bipartite matching (left = every submitted finding,
 repeats included; right = every truth issue).  TP = matching size, FP = findings - TP,
@@ -65,18 +71,10 @@ def build_alias_map(bundle: dict) -> dict[str, frozenset]:
         add(r["row_id"], tgt)
         add(r["txn_id"], tgt)
     for r in bundle["fx"]:
-        add(r["fx_id"], ("fx", r["fx_id"]))
+        tgt = ("fx", r["fx_id"])
+        add(r["fx_id"], tgt)
+        add(f"{r['date']}:{r['source_currency']}:{r['target_currency']}", tgt)
     return {k: frozenset(v) for k, v in alias.items()}
-
-
-def _resolve_targets(evidence_set_ids, alias: dict[str, frozenset]) -> list[frozenset] | None:
-    """Targets of each required evidence id of a truth set (None if one is unknown)."""
-    out = []
-    for e in evidence_set_ids:
-        if e not in alias:
-            return None
-        out.append(alias[e])
-    return out
 
 
 def resolve_evidence(evidence_ids: list[str], alias: dict[str, frozenset]) -> set | None:
@@ -89,8 +87,11 @@ def resolve_evidence(evidence_ids: list[str], alias: dict[str, frozenset]) -> se
     return out
 
 
-def _covers(required: list[frozenset], have: set) -> bool:
-    return all(targets & have for targets in required)
+def _covered(r: str, submitted: set[str], have: set, alias: dict[str, frozenset]) -> bool:
+    if r in submitted:
+        return True
+    canonical = {t for t in alias.get(r, ()) if t[0] in ("doc", "txn", "fx") and t[1] == r}
+    return bool(canonical & have)
 
 
 def is_candidate(finding: dict, issue: dict, alias: dict[str, frozenset]) -> bool:
@@ -105,11 +106,8 @@ def is_candidate(finding: dict, issue: dict, alias: dict[str, frozenset]) -> boo
     have = resolve_evidence(finding["evidence_ids"], alias)
     if have is None:
         return False
-    for s in issue["acceptable_evidence_sets"]:
-        required = _resolve_targets(s, alias)
-        if required is not None and _covers(required, have):
-            return True
-    return False
+    submitted = set(finding["evidence_ids"])
+    return any(all(_covered(r, submitted, have, alias) for r in s) for s in issue["acceptable_evidence_sets"])
 
 
 def _max_matching(adj: list[list[int]], n_right: int, fixed: dict[int, int], banned_right: set[int]) -> int:

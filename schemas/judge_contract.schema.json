@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "judge_contract",
+  "description": "JSON shapes of judge_adapter.py (organisers' uniform connection). Validated in tests/test_judge_adapter.py.",
+  "definitions_index": ["action", "first_observation", "observation", "error", "score"],
+  "action": {
+    "type": "object", "required": ["name"],
+    "properties": {
+      "name": {"type": "string", "enum": ["list_records", "get_record", "get_document", "calculator", "submit"]},
+      "args": {"type": "object"}
+    }
+  },
+  "first_observation": {
+    "type": "object", "required": ["task", "manifest", "policy", "remaining_steps"], "additionalProperties": false,
+    "properties": {
+      "task": {"type": "string"},
+      "manifest": {"type": "object"},
+      "policy": {"type": "object"},
+      "remaining_steps": {"type": "integer", "minimum": 0, "maximum": 100}
+    }
+  },
+  "observation": {
+    "type": "object", "required": ["result", "error", "remaining_steps"], "additionalProperties": false,
+    "properties": {
+      "result": {"description": "list_records: {records, next_cursor}; get_record/get_document: the object; calculator: decimal string; submit: {accepted: true}; null on error"},
+      "error": {"anyOf": [{"type": "null"},
+                          {"type": "object", "required": ["code", "message"], "additionalProperties": false,
+                           "properties": {"code": {"type": "string", "enum": ["UNKNOWN_ACTION", "BAD_ARGS", "UNKNOWN_TABLE", "NOT_FOUND", "BAD_CURSOR", "CALC_ERROR", "EPISODE_DONE", "TIMEOUT", "INVALID_FINDINGS"]},
+                                          "message": {"type": "string", "maxLength": 80}}}]},
+      "remaining_steps": {"type": "integer", "minimum": 0, "maximum": 100}
+    }
+  },
+  "list_records_result": {
+    "type": "object", "required": ["records", "next_cursor"], "additionalProperties": false,
+    "properties": {
+      "records": {"type": "array", "maxItems": 50, "items": {"type": "object"}},
+      "next_cursor": {"anyOf": [{"type": "null"}, {"type": "string"}]}
+    }
+  },
+  "score": {
+    "type": "object", "required": ["tp", "fp", "fn", "precision", "recall", "f1", "return"],
+    "properties": {
+      "tp": {"type": ["integer", "null"]}, "fp": {"type": ["integer", "null"]}, "fn": {"type": ["integer", "null"]},
+      "precision": {"type": ["number", "null"]}, "recall": {"type": ["number", "null"]}, "f1": {"type": ["number", "null"]},
+      "return": {"type": "number", "minimum": -1, "maximum": 1},
+      "invalid_reason": {"type": "string", "description": "only for an invalid structure (return = -1)"}
+    }
+  }
+}

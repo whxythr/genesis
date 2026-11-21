@@ -171,7 +171,7 @@ def test_c15_submit_is_final(eps):
         env.step(_a("list_records", table="invoices", cursor=None, limit=5))
         obs, r, term, trunc, info = env.step(_a("submit", findings=_oracle(eps["E"])))
         assert term and not trunc and obs["result"] == {"accepted": True}
-        assert abs(r - 0.998) < 1e-9 and info["metrics"]["tp"] == len(_truth(eps["E"])["issues"])
+        assert abs(r - 0.998) < 1e-9 and info == {}  # train: reward to the policy, no diagnostics in info
         obs2, r2, term2, trunc2, info2 = env.step(_a("submit", findings={"episode_id": "x", "findings": []}))
         assert obs2["error"] is not None and r2 == 0 and term2 and info2 == {}
     finally:
@@ -281,11 +281,85 @@ def test_train_mode_generates_with_seed():
         env.close()
 
 
-def test_score_episode_invalid_structure(eps):
+def test_score_episode_invalid_structure_is_logged(eps, tmp_path, monkeypatch):
+    log = tmp_path / "grader.jsonl"
+    monkeypatch.setattr(ja, "GRADER_LOG", log)
     bad = _oracle(eps["E"])
     bad["findings"] = bad["findings"] * 31
     res = ja.score_episode(str(eps["E"]), bad, 5)
     assert res["return"] == -1 and res["tp"] is None and res["f1"] is None
+    assert _schema_errors(res, "score") == []
+    assert json.loads(log.read_text(encoding="utf-8").splitlines()[-1])["invalid_reason"] == "SCHEMA"
+
+
+def test_invalid_submit_through_env_is_logged_and_ends_episode(eps, tmp_path, monkeypatch):
+    log = tmp_path / "grader.jsonl"
+    monkeypatch.setattr(ja, "GRADER_LOG", log)
+    env = ja.make_env()
+    try:
+        env.reset(None, _closed(eps["E"]))
+        o, r, term, trunc, info = env.step(_a("submit", findings={"episode_id": "x", "findings": "nope"}))
+        assert term and r == 0 and info == {} and o["result"] is None and o["error"]["code"] == "INVALID_FINDINGS"
+    finally:
+        env.close()
+    entry = json.loads(log.read_text(encoding="utf-8").splitlines()[-1])
+    assert entry["reward"] == -1 and entry["invalid_reason"] is not None
+
+
+def test_score_without_submit_is_empty_findings(eps):
+    res = ja.score_episode(str(eps["C"]), None, 100)
+    assert (res["tp"], res["fp"], res["fn"]) == (0, 0, 0) and abs(res["return"] - 0.8) < 1e-9
+    res = ja.score_episode(str(eps["E"]), None, 100)
+    assert res["fn"] == len(_truth(eps["E"])["issues"]) and res["return"] == -1
+
+
+def test_score_on_hand_made_fixture_truth_only(eps, tmp_path):
+    """A grader fixture may contain only truth.json (no provenance), even as a bare list."""
+    import shutil
+    d = tmp_path / "fixture"
+    shutil.copytree(eps["C"], d)
+    (d / "provenance.json").unlink()
+    row = _read_csv(d / "ledger.csv")[0]
+    docs = _jsonl(d / "invoices.jsonl")[:2]
+    issue = {"type": "duplicate_invoice", "affected_ids": [row["row_id"]], "expected_amount_minor": 10000,
+             "currency": "KZT", "acceptable_evidence_sets": [[docs[0]["doc_id"], docs[1]["doc_id"]]]}
+    (d / "truth.json").write_text(json.dumps([issue]), encoding="utf-8")
+    eid = json.loads((d / "manifest.json").read_text(encoding="utf-8"))["episode_id"]
+    f = {"type": "duplicate_invoice", "affected_ids": [row["row_id"]], "claimed_amount_minor": 10000,
+         "currency": "KZT", "evidence_ids": [docs[0]["doc_id"], docs[1]["doc_id"]], "explanation": "x"}
+    good = ja.score_episode(str(d), {"episode_id": eid, "findings": [f]}, 10)
+    assert (good["tp"], good["fp"], good["fn"]) == (1, 0, 0) and abs(good["return"] - 0.98) < 1e-9
+    only_d1 = dict(f, evidence_ids=[docs[0]["doc_id"]])
+    assert ja.score_episode(str(d), {"episode_id": eid, "findings": [only_d1]}, 10)["tp"] == 0
+
+
+SCHEMA = json.loads((ROOT / "schemas" / "judge_contract.schema.json").read_text(encoding="utf-8"))
+
+
+def _schema_errors(value, part):
+    from audit_env import schema
+    return schema.errors(value, SCHEMA[part])
+
+
+def test_every_observation_matches_published_contract_schema(eps):
+    env = ja.make_env()
+    try:
+        first, _ = env.reset(None, _closed(eps["E"]))
+        assert _schema_errors(first, "first_observation") == []
+        inv = _jsonl(eps["E"] / "invoices.jsonl")[0]
+        actions = [_a("list_records", table=t, cursor=None, limit=50) for t in ("ledger", "invoices", "payments", "fx")]
+        actions += [_a("get_record", table="invoices", id=inv["invoice_id"]), _a("get_document", doc_id=inv["doc_id"]),
+                    _a("calculator", expression="2/3"), _a("get_record", table="ledger", id="nope"), _a("bogus"),
+                    _a("submit", findings=_oracle(eps["E"])), _a("calculator", expression="1")]
+        for act in actions:
+            obs, r, term, trunc, info = env.step(act)
+            assert _schema_errors(obs, "observation") == [], (act, obs)
+            if act["name"] == "list_records":
+                assert _schema_errors(obs["result"], "list_records_result") == []
+            if act["name"] == "get_record" and obs["error"] is None:
+                assert obs["result"] == inv  # full §03 record, identical to the file (line_items included)
+    finally:
+        env.close()
 
 
 # ------------------------------------------------------------------ Block 2: D01-D20 matrix
@@ -404,6 +478,9 @@ def test_paired_check(pid, d, permute, rename, tmp_path):
     back = _judge_transform(src, tmp_path / "copy", int(pid[1:]), permute, rename, rename_extra=(int(pid[1:]) % 2 == 0))
     dst = tmp_path / "copy"
     steps = 7
+    # pair rule 4: the copy is as valid as the original - no broken evidence, no new leak
+    from audit_env.verify import verify_dir
+    assert verify_dir(src) == [] and verify_dir(dst) == []
     f_src, _ = _run_oracle(src, steps)
     f_dst, _ = _run_oracle(dst, steps)
     assert _unmap(f_dst, back)["findings"] == _unmap(f_src, {})["findings"]

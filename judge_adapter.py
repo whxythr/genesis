@@ -45,7 +45,8 @@ from audit_env import jsonutil  # noqa: E402
 from audit_env.env.core import AuditEnv  # noqa: E402
 from audit_env.env.tools import TOOL_HELP  # noqa: E402
 from audit_env.generator.episode import generate_episode as _generate  # noqa: E402
-from audit_env.generator.writer import read_closed, read_open, write_closed, write_open  # noqa: E402
+from audit_env.generator.writer import (  # noqa: E402
+    closed_dir_of, read_open, read_truth_for_grading, write_closed, write_open)
 from audit_env.grader.core import grade  # noqa: E402
 
 _JUDGE_KEYS = ("mode", "episode_dir", "team_config")
@@ -96,7 +97,9 @@ class JudgeEnv:
 
     def _get(self, mode: str) -> AuditEnv:
         if mode not in self._envs:
-            self._envs[mode] = AuditEnv(mode=mode)
+            # the grader process (not this object) appends every graded episode, incl.
+            # invalid submissions with their error code, to the grader log
+            self._envs[mode] = AuditEnv(mode=mode, grader_log=GRADER_LOG)
         return self._envs[mode]
 
     def reset(self, seed=None, config=None):
@@ -114,7 +117,7 @@ class JudgeEnv:
             "policy": obs["policy"],
             "remaining_steps": obs["steps_remaining"],
         }
-        return first, dict(info)
+        return first, {}  # info never carries closed data (or anything derived from it)
 
     def step(self, action):
         if self._env is None:
@@ -135,7 +138,9 @@ class JudgeEnv:
             "error": None if obs.get("ok") else dict(obs["error"]),
             "remaining_steps": obs["steps_remaining"],
         }
-        return out, float(reward), bool(terminated), bool(truncated), dict(info)
+        # train: the terminal reward is in ``reward``; info stays {} in BOTH modes, because
+        # TP/FP/FN would reveal how many errors the hidden truth contains
+        return out, float(reward), bool(terminated), bool(truncated), {}
 
     def close(self) -> None:
         for env in self._envs.values():
@@ -155,10 +160,6 @@ def make_env() -> JudgeEnv:
 
 
 # ----------------------------------------------------------------------------- scoring
-def _closed_dir(d: Path) -> Path:
-    return d / "closed" if (d / "closed" / "truth.json").is_file() else d
-
-
 def _log(entry: dict) -> None:
     try:
         GRADER_LOG.parent.mkdir(parents=True, exist_ok=True)
@@ -169,13 +170,18 @@ def _log(entry: dict) -> None:
 
 
 def score_episode(episode_dir: str, findings: dict, inspection_steps: int) -> dict:
-    """Closed grader call (judge side, never a policy action)."""
+    """Closed grader call (judge side, never a policy action).
+
+    ``findings`` is the findings.json object of the submit.  ``None`` means "no submit"
+    (step or time limit): graded as empty findings, as the case prescribes for truncation.
+    Anything else that is not a valid findings.json object is an invalid structure (-1).
+    """
     d = Path(episode_dir)
     bundle = read_open(d)
-    truth, _ = read_closed(_closed_dir(d))
+    truth, _ = read_truth_for_grading(closed_dir_of(d))
     steps = inspection_steps if isinstance(inspection_steps, int) and not isinstance(inspection_steps, bool) else 0
     steps = max(0, steps)
-    res = grade(findings, truth, bundle, steps, "submitted")
+    res = grade(findings, truth, bundle, steps, "truncated" if findings is None else "submitted")
     _log({"t": round(time.time(), 3), "episode_id": bundle["manifest"]["episode_id"],
           "inspection_steps": steps, "invalid_reason": res["invalid_reason"],
           "metrics": res["metrics"], "reward": res["reward"]})

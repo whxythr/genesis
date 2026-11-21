@@ -208,6 +208,32 @@ def test_m12_identical_findings_not_merged():
     _check(_run([_f(), _f()], [A]), 1, 1, 0, 47 / 150)
 
 
+def test_evidence_is_literal_subset_for_rows_of_one_transaction():
+    """Test 10 with D1, D2 = two ledger rows of the SAME transaction: one row is not the set."""
+    b = _bundle()
+    b["ledger"] = [{"row_id": "L1", "txn_id": "T1"}, {"row_id": "L2", "txn_id": "T1"}]
+    a = _issue(evidence=(("L1", "L2"),))
+    assert _run([_f(evidence_ids=["L1"])], [a], bundle=b)["metrics"]["tp"] == 0
+    assert _run([_f(evidence_ids=["L2", "L1"])], [a], bundle=b)["metrics"]["tp"] == 1
+
+
+def test_canonical_ids_accept_documented_aliases():
+    """Our truth names documents by doc_id and transactions by txn_id; the published
+    aliases (invoice_id for its doc_id, any row of the transaction for its txn_id) count."""
+    b = _bundle()
+    b["ledger"] = [{"row_id": "L1", "txn_id": "T1"}, {"row_id": "L2", "txn_id": "T1"}]
+    a = _issue(evidence=(("D1", "T1"),))
+    assert _run([_f(evidence_ids=["R1", "L2"])], [a], bundle=b)["metrics"]["tp"] == 1
+    assert _run([_f(evidence_ids=["R2", "L2"])], [a], bundle=b)["metrics"]["tp"] == 0  # R2 is another invoice
+
+
+def test_fx_composite_key_is_valid_evidence():
+    b = _bundle()
+    b["fx"] = [{"fx_id": "FX1", "date": "2026-09-01", "source_currency": "USD", "target_currency": "KZT"}]
+    a = _issue(evidence=(("D1", "FX1"),))
+    assert _run([_f(evidence_ids=["D1", "2026-09-01:USD:KZT"])], [a], bundle=b)["metrics"]["tp"] == 1
+
+
 def test_wrong_but_wellformed_values_are_fp_not_crash():
     res = _run([_f(type="totally_new_type"), _f(affected_ids=[]), _f(claimed_amount_minor=-5)], [A])
     _check(res, 0, 3, 1, -1.0)
