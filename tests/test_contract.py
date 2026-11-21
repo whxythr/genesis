@@ -201,7 +201,7 @@ def test_eval_mode_hides_reward():
         ep = generate_episode(SEED)
         o, r, term, trunc, info = e.step(submit_action(obs["manifest"]["episode_id"], oracle_findings(ep.truth)))
         assert term and r == 0.0 and info == {}
-        assert o["result"] == {"submitted": True}
+        assert o["result"] == {"accepted": True}
         results = e.finalize()
         assert len(results) == 1 and results[0]["reward"] == 1.0
         with pytest.raises(Exception):

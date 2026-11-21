@@ -14,6 +14,7 @@ from pathlib import Path
 
 from .. import __version__
 from ..grader.client import GraderClient, GraderError
+from ..grader.normalize import validate_and_normalize
 from .store import Store
 from .tools import ERROR_MESSAGES, TOOL_HELP, TOOLS, ToolError, run
 
@@ -31,7 +32,8 @@ TASK = (
     "period_cutoff (affected_ids=[invoice_id or payment_id dated outside the period but posted in it]; "
     "amount = the operation converted at the policy rate, base currency). "
     "Amounts are integer minor units of the base currency at the policy rate of the document's own date, each "
-    "computed as if the other errors were fixed; tolerance max(1, expected//1000). "
+    "computed as if the other errors were fixed; amounts must match exactly (tolerance 0); ids, type and "
+    "currency are compared as exact strings. "
     "Each finding needs evidence_ids (doc_id/invoice_id/payment_id, txn_id/row_id, fx_id) that prove it. "
     "Correct but unusual activity (split or combined payments, refunds, subscriptions, late-evening or "
     "foreign-offset timestamps, FX conversions) is not an error. Clean books are possible: submit an empty "
@@ -71,7 +73,11 @@ class AuditEnv:
         if self._store is not None and not self._done:
             self._grade(None, self._steps, "abandoned")
         config = dict(config or {})
-        if "episode" in config:
+        if "episode_dir" in config:
+            # load exactly this episode (judge protocol); the path goes to the grader
+            # process only and is not kept by the environment
+            source = {"kind": "dir", "path": str(config["episode_dir"])}
+        elif "episode" in config:
             source = {"kind": "files", **config["episode"]}
         else:
             if seed is None:
@@ -146,8 +152,13 @@ class AuditEnv:
             args = action.get("args")
             findings = args.get("findings") if isinstance(args, dict) else None
             self._terminated = True
+            # Structure check needs no truth: it only tells the agent whether the submission
+            # was well-formed, never whether it is correct.
+            _, invalid = validate_and_normalize(findings, self.episode_id)
             reward, info = self._grade(findings, self._steps - 1, "submitted")
-            return self._obs("submit", True, {"submitted": True}), reward, True, False, info
+            if invalid is not None:
+                return self._obs("submit", False, error="INVALID_FINDINGS"), reward, True, False, info
+            return self._obs("submit", True, {"accepted": True}), reward, True, False, info
 
         if err is None:
             try:

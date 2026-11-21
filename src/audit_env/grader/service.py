@@ -101,9 +101,22 @@ class Service:
                 bundle = read_open(open_dir)
                 truth, provenance = read_closed(closed_dir)
                 config_id = provenance["config_id"]
+            elif source.get("kind") == "dir":
+                # judge protocol: one directory holding the open files AND truth.json /
+                # provenance.json. Only this process reads it; the env gets the open bundle.
+                path = source.get("path")
+                if not isinstance(path, str) or not path:
+                    return {"ok": False, "error": "BAD_SOURCE"}
+                d = Path(path)
+                closed_dir = d / "closed" if (d / "closed" / "truth.json").is_file() else d
+                if not (d / "manifest.json").is_file() or not (closed_dir / "truth.json").is_file():
+                    return {"ok": False, "error": "NOT_FOUND"}
+                bundle = read_open(d)
+                truth, provenance = read_closed(closed_dir)
+                config_id = provenance.get("config_id", "external") if isinstance(provenance, dict) else "external"
             else:
                 return {"ok": False, "error": "BAD_SOURCE"}
-        except (ConfigError, GenerationError, ValueError, KeyError, OSError):
+        except (ConfigError, GenerationError, ValueError, KeyError, TypeError, OSError):
             return {"ok": False, "error": "OPEN_FAILED"}
         self.active = {"bundle": bundle, "truth": truth, "config_id": config_id, "graded": False}
         return {"ok": True, "bundle": bundle, "config_id": config_id}

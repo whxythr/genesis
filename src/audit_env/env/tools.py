@@ -20,6 +20,7 @@ ERROR_MESSAGES = {
     "CALC_ERROR": "expression rejected",
     "EPISODE_DONE": "episode is over; call reset",
     "TIMEOUT": "episode time limit reached",
+    "INVALID_FINDINGS": "findings structure invalid; episode ended",
 }
 
 ARG_SPEC = {

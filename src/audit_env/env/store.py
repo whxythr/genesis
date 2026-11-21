@@ -48,6 +48,14 @@ class Store:
             "fx": [jsonutil.deep_copy(r) for r in bundle["fx"]],
         }
         self._index = {t: {r[TABLES[t]["key"]]: r for r in rows} for t, rows in self._rows.items()}
+        # documented secondary keys (used only when the primary key does not exist):
+        # invoices/payments also by doc_id, fx also by "date:source_currency:target_currency"
+        self._alt = {
+            "ledger": {},
+            "invoices": {r["doc_id"]: r for r in self._rows["invoices"]},
+            "payments": {r["doc_id"]: r for r in self._rows["payments"]},
+            "fx": {f"{r['date']}:{r['source_currency']}:{r['target_currency']}": r for r in self._rows["fx"]},
+        }
         self._docs = {d["doc_id"]: ("invoice", jsonutil.deep_copy(d)) for d in bundle["invoices"]}
         self._docs.update({d["doc_id"]: ("payment", jsonutil.deep_copy(d)) for d in bundle["payments"]})
         self._key = hashlib.sha256(f"cursor|{self.manifest['episode_id']}".encode()).digest()
@@ -106,6 +114,8 @@ class Store:
         if table not in TABLES:
             raise StoreError("UNKNOWN_TABLE")
         rec = self._index[table].get(rid)
+        if rec is None:
+            rec = self._alt[table].get(rid)
         if rec is None:
             raise StoreError("NOT_FOUND")
         return {"table": table, "record": jsonutil.deep_copy(rec)}
