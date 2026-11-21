@@ -150,10 +150,11 @@ def test_every_type_on_every_true_id_is_punished(errored):
         assert _g(ep, spray[:30]) < _g(ep, exact, steps=99)
 
 
-def test_reward_depends_only_on_fields_not_order_or_case(errored):
+def test_reward_depends_only_on_fields_not_order_or_text(errored):
     ep = errored[0]
     f = oracle_findings(ep.truth)
     g = copy.deepcopy(list(reversed(f)))
     for x in g:
-        x["evidence_ids"] = list(reversed([e.lower() for e in x["evidence_ids"]]))
+        x["evidence_ids"] = list(reversed(x["evidence_ids"]))
+        x["explanation"] = "I am absolutely certain, trust me."
     assert _g(ep, f) == _g(ep, g)

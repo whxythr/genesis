@@ -1,82 +1,130 @@
 """One-to-one matching of findings to truth issues (published code).
 
-A finding f can match issue t iff ALL hold:
-  1. f.type == t.type
-  2. set(f.affected_ids) == set(t.affected_ids)
-  3. f.currency == t.currency
-  4. |f.claimed_amount_minor - t.expected_amount_minor| <= tolerance(t.expected_amount_minor)
-     where tolerance(x) = max(1, x // 1000)   (0.1 %, at least one minor unit)
-  5. every evidence id exists in the episode, and the evidence (after alias
-     resolution) contains at least one complete acceptable evidence set of t.
+A finding f has an EDGE to issue t iff ALL hold:
+  1. f.type == t.type                                   (exact string)
+  2. set(f.affected_ids) == set(t.affected_ids)          (exact strings, canonical set)
+  3. f.currency == t.currency                            (exact string)
+  4. |f.claimed_amount_minor - t.expected_amount_minor| <= TOLERANCE_MINOR[t.type]
+  5. every evidence id exists in the open records of the episode, and the evidence
+     (after alias resolution, see below) contains at least one complete acceptable
+     evidence set of t.  One unknown evidence id -> no edge (FP), even if a full set
+     is also present.
 
-Evidence alias resolution: invoice_id / payment_id -> its doc_id; row_id -> its txn_id;
-doc_id, txn_id, fx_id, entity_id stand for themselves.
+Amount tolerance tau: 0 minor units for every type (exact integer comparison).  All
+expected amounts are produced by integer arithmetic with the published ROUND_HALF_UP
+rule (policy.json), so an agent that follows the policy obtains them exactly.
 
-Matching is maximum bipartite matching (Kuhn's augmenting paths), findings visited in
-submission order and issues in issue_id order — deterministic. Only the matching
-*size* affects metrics, and the maximum size is unique, so the tie-break never
-changes the reward.
+Evidence alias resolution (documented): an evidence id may name a record by any of its
+open identifiers - invoice: doc_id or invoice_id; payment: doc_id or payment_id;
+ledger: row_id (any row of the transaction) or txn_id; fx: fx_id.  entity_id stands
+for itself.  Resolution is per namespace: if the same string is an id in two
+namespaces it resolves to both targets, so the check never depends on which
+namespace a renaming happened to put first.
+
+Matching: maximum-cardinality bipartite matching (left = every submitted finding,
+repeats included; right = every truth issue).  TP = matching size, FP = findings - TP,
+FN = issues - TP.  Tie-break among maximum matchings (affects only WHICH finding is
+reported as matched, never TP/FP/FN or the reward): issue_ids sorted by Unicode code
+points; the lexicographically smallest sorted sequence of (issue_id, finding_index)
+pairs is chosen.
 """
 
 from __future__ import annotations
 
+TOLERANCE_MINOR = {
+    "duplicate_invoice": 0,
+    "unapplied_payment": 0,
+    "fx_error": 0,
+    "period_cutoff": 0,
+}
 
-def tolerance(expected: int) -> int:
-    return max(1, expected // 1000)
+
+def tolerance(issue_type: str) -> int:
+    return TOLERANCE_MINOR.get(issue_type, 0)
 
 
-def build_alias_map(bundle: dict) -> dict[str, str]:
-    alias: dict[str, str] = {}
+def build_alias_map(bundle: dict) -> dict[str, frozenset]:
+    alias: dict[str, set] = {}
+
+    def add(key, target) -> None:
+        if isinstance(key, str):
+            alias.setdefault(key, set()).add(target)
+
     for inv in bundle["invoices"]:
-        alias[inv["doc_id"]] = inv["doc_id"]
-        alias[inv["invoice_id"]] = inv["doc_id"]
-        alias[inv["entity_id"]] = inv["entity_id"]
+        tgt = ("doc", inv["doc_id"])
+        add(inv["doc_id"], tgt)
+        add(inv["invoice_id"], tgt)
+        add(inv.get("entity_id"), ("entity", inv.get("entity_id")))
     for p in bundle["payments"]:
-        alias[p["doc_id"]] = p["doc_id"]
-        alias[p["payment_id"]] = p["doc_id"]
-        alias[p["entity_id"]] = p["entity_id"]
+        tgt = ("doc", p["doc_id"])
+        add(p["doc_id"], tgt)
+        add(p["payment_id"], tgt)
+        add(p.get("entity_id"), ("entity", p.get("entity_id")))
     for r in bundle["ledger"]:
-        alias[r["row_id"]] = r["txn_id"]
-        alias[r["txn_id"]] = r["txn_id"]
+        tgt = ("txn", r["txn_id"])
+        add(r["row_id"], tgt)
+        add(r["txn_id"], tgt)
     for r in bundle["fx"]:
-        alias[r["fx_id"]] = r["fx_id"]
-    return alias
+        add(r["fx_id"], ("fx", r["fx_id"]))
+    return {k: frozenset(v) for k, v in alias.items()}
 
 
-def resolve_evidence(evidence_ids: list[str], alias: dict[str, str]) -> set[str] | None:
-    """Resolved evidence set, or None if any id does not exist."""
-    out = set()
-    for e in evidence_ids:
+def _resolve_targets(evidence_set_ids, alias: dict[str, frozenset]) -> list[frozenset] | None:
+    """Targets of each required evidence id of a truth set (None if one is unknown)."""
+    out = []
+    for e in evidence_set_ids:
         if e not in alias:
             return None
-        out.add(alias[e])
+        out.append(alias[e])
     return out
 
 
-def is_candidate(finding: dict, issue: dict, alias: dict[str, str]) -> bool:
+def resolve_evidence(evidence_ids: list[str], alias: dict[str, frozenset]) -> set | None:
+    """Union of resolved targets, or None if any id does not exist in the open records."""
+    out: set = set()
+    for e in evidence_ids:
+        if e not in alias:
+            return None
+        out |= alias[e]
+    return out
+
+
+def _covers(required: list[frozenset], have: set) -> bool:
+    return all(targets & have for targets in required)
+
+
+def is_candidate(finding: dict, issue: dict, alias: dict[str, frozenset]) -> bool:
     if finding["type"] != issue["type"]:
         return False
     if set(finding["affected_ids"]) != set(issue["affected_ids"]):
         return False
     if finding["currency"] != issue["currency"]:
         return False
-    if abs(finding["claimed_amount_minor"] - issue["expected_amount_minor"]) > tolerance(issue["expected_amount_minor"]):
+    if abs(finding["claimed_amount_minor"] - issue["expected_amount_minor"]) > tolerance(issue["type"]):
         return False
-    ev = resolve_evidence(finding["evidence_ids"], alias)
-    if ev is None:
+    have = resolve_evidence(finding["evidence_ids"], alias)
+    if have is None:
         return False
-    return any(set(s) <= ev for s in issue["acceptable_evidence_sets"])
+    for s in issue["acceptable_evidence_sets"]:
+        required = _resolve_targets(s, alias)
+        if required is not None and _covers(required, have):
+            return True
+    return False
 
 
-def match(findings: list[dict], issues: list[dict], alias: dict[str, str]) -> list[tuple[int, str]]:
-    """Returns sorted list of (finding_index, issue_id) pairs of a maximum matching."""
-    issues = sorted(issues, key=lambda t: t["issue_id"])
-    adj = [[j for j, t in enumerate(issues) if is_candidate(f, t, alias)] for f in findings]
-    owner: list[int | None] = [None] * len(issues)
+def _max_matching(adj: list[list[int]], n_right: int, fixed: dict[int, int], banned_right: set[int]) -> int:
+    """Size of a maximum matching that contains every pair in ``fixed`` (right -> left)
+    and leaves ``banned_right`` unmatched.  Kuhn's augmenting paths."""
+    owner: list[int | None] = [None] * n_right
+    used_left = set()
+    for j, i in fixed.items():
+        owner[j] = i
+        used_left.add(i)
+    locked = set(fixed)
 
     def augment(i: int, seen: set[int]) -> bool:
         for j in adj[i]:
-            if j in seen:
+            if j in seen or j in locked or j in banned_right:
                 continue
             seen.add(j)
             if owner[j] is None or augment(owner[j], seen):
@@ -84,6 +132,29 @@ def match(findings: list[dict], issues: list[dict], alias: dict[str, str]) -> li
                 return True
         return False
 
-    for i in range(len(findings)):
-        augment(i, set())
-    return sorted((i, issues[j]["issue_id"]) for j, i in enumerate(owner) if i is not None)
+    size = len(fixed)
+    for i in range(len(adj)):
+        if i not in used_left and augment(i, set()):
+            size += 1
+    return size
+
+
+def match(findings: list[dict], issues: list[dict], alias: dict[str, frozenset]) -> list[tuple[int, str]]:
+    """Sorted list of (finding_index, issue_id) pairs of the published maximum matching."""
+    issues = sorted(issues, key=lambda t: t["issue_id"])
+    adj = [[j for j, t in enumerate(issues) if is_candidate(f, t, alias)] for f in findings]
+    best = _max_matching(adj, len(issues), {}, set())
+    fixed: dict[int, int] = {}
+    banned: set[int] = set()
+    for j in range(len(issues)):
+        chosen = None
+        for i in range(len(findings)):
+            if j in adj[i] and i not in fixed.values():
+                if _max_matching(adj, len(issues), {**fixed, j: i}, banned) == best:
+                    chosen = i
+                    break
+        if chosen is None:
+            banned.add(j)
+        else:
+            fixed[j] = chosen
+    return sorted((i, issues[j]["issue_id"]) for j, i in fixed.items())

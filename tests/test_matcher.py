@@ -23,33 +23,47 @@ def test_oracle_all_tp(errored):
         assert res["metrics"]["fn"] == 0 and res["metrics"]["fp"] == 0 and res["reward"] == 1.0
 
 
-def test_normalization_of_ids_types_currency(errored):
+def test_sets_ignore_order_and_repeats(errored):
     ep = _ep(errored)
     f = oracle_findings(ep.truth)
     for x in f:
-        x["type"] = " " + x["type"].upper().replace("_", "-") + " "
-        x["affected_ids"] = [" " + a.lower() + " " for a in x["affected_ids"]] * 2
-        x["currency"] = x["currency"].lower()
-        x["evidence_ids"] = [e.lower() for e in x["evidence_ids"]]
+        x["affected_ids"] = list(reversed(x["affected_ids"])) * 2
+        x["evidence_ids"] = list(reversed(x["evidence_ids"]))
     assert _grade(ep, f)["metrics"]["fp"] == 0
 
 
-def test_tolerance_boundary(errored):
+def test_exact_strings_no_case_or_space_folding(errored):
+    """Published convention: ids, type and currency compare as exact strings."""
+    ep = _ep(errored)
+    base = oracle_findings({"issues": [ep.truth["issues"][0]]})
+    mutations = [
+        lambda x: x.update(type=" " + x["type"]),
+        lambda x: x.update(type=x["type"].upper()),
+        lambda x: x.update(affected_ids=[a.lower() for a in x["affected_ids"]]),
+        lambda x: x.update(affected_ids=[" " + a for a in x["affected_ids"]]),
+        lambda x: x.update(currency=x["currency"].lower()),
+        lambda x: x.update(currency=x["currency"] + " "),
+        lambda x: x.update(evidence_ids=[e.lower() for e in x["evidence_ids"]]),
+    ]
+    for mut in mutations:
+        g = copy.deepcopy(base)
+        mut(g[0])
+        m = _grade(ep, g)["metrics"]
+        assert (m["tp"], m["fp"]) == (0, 1)
+
+
+def test_tolerance_is_zero(errored):
     ep = _ep(errored)
     t = ep.truth["issues"][0]
-    tol = matcher.tolerance(t["expected_amount_minor"])
     f = oracle_findings({"issues": [t]})
-    for delta, ok in [(tol, True), (-tol, True), (tol + 1, False), (-(tol + 1), False)]:
+    for delta, ok in [(0, True), (1, False), (-1, False)]:
         g = copy.deepcopy(f)
-        g[0]["claimed_amount_minor"] = max(0, t["expected_amount_minor"] + delta)
+        g[0]["claimed_amount_minor"] = t["expected_amount_minor"] + delta
         assert (_grade(ep, g)["metrics"]["tp"] == 1) == ok
 
 
-def test_tolerance_formula():
-    assert matcher.tolerance(1) == 1
-    assert matcher.tolerance(999) == 1
-    assert matcher.tolerance(5000) == 5
-    assert matcher.tolerance(1_000_000) == 1000
+def test_tolerance_table():
+    assert all(matcher.tolerance(t) == 0 for t in matcher.TOLERANCE_MINOR)
 
 
 def test_wrong_type_ids_currency_fail(errored):
