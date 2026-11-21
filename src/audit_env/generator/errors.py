@@ -37,6 +37,9 @@ def make_plan(rng: random.Random, cfg: dict) -> dict:
     """Decide clean/errored, interacting scenarios and per-type counts (before generation)."""
     enabled = [t for t in ERROR_TYPES if cfg["errors"][t]["enabled"]]
     plan = {"clean": False, "counts": {t: 0 for t in ERROR_TYPES}, "scenarios": []}
+    variants = {t: cfg["errors"][t]["variants"] for t in ERROR_TYPES if "variants" in cfg["errors"][t]}
+    if variants:
+        plan["variants"] = variants
     if cfg["max_errors"] == 0 or rng.random() < cfg["clean_probability"]:
         plan["clean"] = True
         return plan
@@ -66,6 +69,7 @@ class _Injector:
         self.ids = ids
         self.rng = rng
         self.inj = inj
+        self.variants: dict[str, list[str]] = {}
 
     def _payments_by_invoice(self) -> dict[str, list[dict]]:
         out: dict[str, list[dict]] = {}
@@ -147,6 +151,11 @@ class _Injector:
         for pay in cands:
             old_refs = jsonutil.deep_copy(pay["invoice_refs"])
             variants = ["null", "partial"] + (["drop"] if len(old_refs) >= 2 else [])
+            allowed = self.variants.get("unapplied_payment")
+            if allowed is not None:
+                variants = [v for v in variants if v in allowed]
+                if not variants:
+                    continue
             variant = rng.choice(variants)
             if variant == "null":
                 new_refs = None
@@ -220,6 +229,9 @@ class _Injector:
             variants += [("previous_day", day - timedelta(days=1)), ("next_day", day + timedelta(days=1)),
                          ("week_old_rate", day - timedelta(days=7))]
             rng.shuffle(variants)
+            allowed = self.variants.get("fx_error")
+            if allowed is not None:
+                variants = [v for v in variants if v[0] in allowed]
             for variant, wrong_day in variants:
                 if (cur, wrong_day.isoformat()) not in c.rates:
                     continue
@@ -335,6 +347,7 @@ def inject(company: Company, ids: IdFactory, rng: random.Random, plan: dict, set
     inj = Injection()
     counts = plan["counts"]
     injector = _Injector(company, ids, rng, inj)
+    injector.variants = plan.get("variants", {})
     scenarios.apply(injector, plan, setup)
     for etype in ERROR_TYPES:
         fn = getattr(injector, etype, None)

@@ -11,7 +11,9 @@ from ..config import config_id, resolve
 from ..ids import ALPHABET, IdFactory
 from . import evidence, invariants, scenarios, writer
 from .company import build_company
-from .errors import inject, make_plan
+from .errors import SCENARIO_SIZE, inject, make_plan
+
+MAX_ATTEMPTS = 25
 from .posting import post_ledger
 
 
@@ -50,19 +52,31 @@ def generate_episode(seed: int, config: dict | None = None) -> Episode:
         raise ValueError("seed must be a non-negative int")
     cfg = resolve(config)
     cid = config_id(cfg)
-    ids = IdFactory(random.Random(f"{seed}|ids|{cid}"))
     episode_id = _episode_id(seed, cid)
     plan = make_plan(random.Random(f"{seed}|plan|{cid}"), cfg)
-    company = build_company(random.Random(f"{seed}|company|{cid}"), cfg, ids, episode_id)
-    scenario_state = scenarios.setup(company, ids, random.Random(f"{seed}|scenario|{cid}"), plan)
+    planned = sum(plan["counts"].values()) + sum(SCENARIO_SIZE[s] for s in plan["scenarios"])
 
-    clean_ledger = post_ledger(company, ids)
-    clean_bundle = writer.build_bundle(company, clean_ledger)
-    problems = invariants.check_clean(clean_bundle)
-    if problems:
-        raise GenerationError(f"clean history violates invariants (seed={seed}): {problems[:5]}")
+    # A requested error may find no valid target in a particular company (e.g. no foreign
+    # receipt for fx_error). Instead of silently emitting fewer errors than configured, the
+    # company is rebuilt with a deterministic attempt salt (attempt 0 = the original salts).
+    for attempt in range(MAX_ATTEMPTS):
+        salt = cid if attempt == 0 else f"{cid}|retry{attempt}"
+        ids = IdFactory(random.Random(f"{seed}|ids|{salt}"))
+        company = build_company(random.Random(f"{seed}|company|{salt}"), cfg, ids, episode_id)
+        scenario_state = scenarios.setup(company, ids, random.Random(f"{seed}|scenario|{salt}"), plan)
 
-    inj = inject(company, ids, random.Random(f"{seed}|inject|{cid}"), plan, scenario_state)
+        clean_ledger = post_ledger(company, ids)
+        clean_bundle = writer.build_bundle(company, clean_ledger)
+        problems = invariants.check_clean(clean_bundle)
+        if problems:
+            raise GenerationError(f"clean history violates invariants (seed={seed}): {problems[:5]}")
+
+        inj = inject(company, ids, random.Random(f"{seed}|inject|{salt}"), plan, scenario_state)
+        if len(inj.issues) >= planned:
+            break
+    else:
+        raise GenerationError(f"could not place the {planned} configured errors (seed={seed}, "
+                              f"{MAX_ATTEMPTS} attempts); relax the config")
     ledger = post_ledger(company, ids, inj.overrides)
     bundle = writer.build_bundle(company, ledger)
 
@@ -97,6 +111,7 @@ def generate_episode(seed: int, config: dict | None = None) -> Episode:
                              "payments": len(clean_bundle["payments"])},
             "distractor_tags": tags,
             "overrides": jsonutil.deep_copy(inj.overrides),
+            "company_attempt": attempt,
             "plan": plan,
         },
         "changes": inj.changes,

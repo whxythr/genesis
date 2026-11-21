@@ -12,6 +12,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG_PATH = REPO_ROOT / "configs" / "default.json"
 ERROR_TYPES = ("duplicate_invoice", "unapplied_payment", "fx_error", "period_cutoff")
 SCENARIOS = ("partial_fx_payment_at_cutoff", "partially_paid_duplicate")
+ERROR_VARIANTS = {
+    "unapplied_payment": ("null", "partial", "drop"),
+    "fx_error": ("utc_date_instead_of_company_date", "previous_day", "next_day", "week_old_rate"),
+}
 
 
 class ConfigError(ValueError):
@@ -45,9 +49,22 @@ def _range(cfg: dict, key: str, lo: int = 0) -> None:
 def resolve(override: dict | None = None) -> dict:
     """Default config deep-merged with ``override``; validated."""
     cfg = load_default()
+    variants: dict[str, list[str]] = {}
     if override:
-        override = {k: v for k, v in override.items() if k not in ("seeds", "split")}
+        override = jsonutil.deep_copy({k: v for k, v in override.items() if k not in ("seeds", "split")})
+        # optional per-type variant filter (not in default.json, so default config ids are unchanged)
+        for et, sub in sorted((override.get("errors") or {}).items()):
+            if isinstance(sub, dict) and "variants" in sub:
+                allowed = ERROR_VARIANTS.get(et)
+                v = sub.pop("variants")
+                if allowed is None:
+                    raise ConfigError(f"errors.{et}.variants: this type has no selectable variants")
+                if not (isinstance(v, list) and v and all(x in allowed for x in v)):
+                    raise ConfigError(f"errors.{et}.variants: non-empty subset of {list(allowed)} expected")
+                variants[et] = sorted(set(v))
         cfg = _merge(cfg, override, "$")
+    for et in sorted(variants):
+        cfg["errors"][et]["variants"] = variants[et]
     for key in ("n_entities", "n_invoices", "n_background_txns"):
         _range(cfg, key, 1 if key != "n_background_txns" else 0)
     for key in sorted(cfg["distractors"]):
