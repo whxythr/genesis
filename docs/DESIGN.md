@@ -184,7 +184,7 @@ seed + config ──► generator (в процессе оценщика)
 | L7 | Если после чужого переименования одна строка окажется ID в двух таблицах, она засчитывается как доказательство за оба объекта (D14): `evidence_ids` нетипизированы | `test_paired_check` с раздельными префиксами пространств; `test_evidence_is_literal_subset_for_rows_of_one_transaction` |
 | L8 | Пересборка компании (D48) удлиняет генерацию редких сочетаний | 150 seed конфига по умолчанию: 140 с 1-й попытки, 9 со 2-й, 1 с 3-й (≈ 0.1 с на попытку); конфиг, который нельзя выполнить за 25 попыток, даёт `GenerationError`, а не тихо меньше ошибок |
 | L9 | `random_explorer` не инвариантен к порядку строк по построению (выбирает из увиденного); инвариантность проверяется на oracle/reconcile/flag_all | `python -m audit_env invariance` — 60 пар, 0 расхождений |
-| L10 | Docker-сборка в этой итерации проверялась только запуском того же `check` на Python 3.13 и 3.15 (на машине разработчика Docker не установлен) | `docker build -t audit-env . && docker run --rm --network none audit-env make check` |
+| L10 | Официальный путь — Docker (`python:3.11-slim`, `--network none`); локально, вне Docker, проверка прогонялась на Python 3.13 и 3.15, отдельный локальный прогон на 3.11 не делался | Docker-прогон 22.11.2026 командой: `docker build -t audit-env . && docker run --rm --network none --cpus 2 --memory 4g audit-env make check` → `CHECK PASSED` |
 
 ## 7. Базовые политики и разбор сбоев (измерено)
 
