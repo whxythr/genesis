@@ -1,10 +1,16 @@
-PY ?= python
+# Python: the project's .venv when it exists (local runs), otherwise `python` (Docker image,
+# where requirements.lock is installed into the image's interpreter). Override with PY=...
+PY ?= $(if $(wildcard .venv/bin/python),.venv/bin/python,python)
 export PYTHONPATH := src
 
-.PHONY: check test generate validate verify baselines invariance demo
+.PHONY: check setup test generate validate verify baselines invariance demo
 
-check:          ## everything: tests, data validation, 4 baselines, paired invariance
+check:          ## everything: tests, data validation, file-level verify, 4 baselines, paired invariance
 	$(PY) -m audit_env check
+
+setup:          ## local only: create .venv and install the pinned dependencies (needs internet once)
+	python3 -m venv .venv
+	.venv/bin/python -m pip install -r requirements.lock
 
 test:
 	$(PY) -m pytest -q

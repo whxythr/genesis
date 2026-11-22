@@ -229,6 +229,17 @@ def cmd_check() -> int:
         steps.append((name, ok))
         print(f"==> {name}: {'OK' if ok else 'FAILED'}", flush=True)
 
+    import importlib.util
+    if importlib.util.find_spec("pytest") is None:
+        print(f"pytest is not installed for {sys.executable}.\n"
+              "Install the pinned dependencies into THIS interpreter, then run the check again:\n"
+              f"    {sys.executable} -m pip install -r requirements.lock\n"
+              "or use the one-command scripts that set up .venv by themselves:\n"
+              "    Windows:      powershell -ExecutionPolicy Bypass -File .\\scripts\\check.ps1\n"
+              "    Linux/macOS:  sh scripts/check.sh", flush=True)
+        stage("pytest (not installed)", False)
+        print("\nCHECK FAILED: ['pytest is not installed']")
+        return 1
     rc = subprocess.call([sys.executable, "-m", "pytest", "-q"], cwd=REPO_ROOT)
     stage("pytest", rc == 0)
     for split in ("train", "dev"):

@@ -34,21 +34,38 @@ docker run --rm --network none --cpus 2 --memory 4g audit-env make check
 
 Сборке нужна сеть (базовый образ и pytest), запуску — нет.
 
-### Локально
+### Локально, без Docker
+
+Нужен только Python 3.11+ и git. Скрипт сам создаёт окружение `.venv`, ставит зависимости
+точных версий из `requirements.lock` (интернет нужен один раз) и запускает проверку.
 
 ```bash
-python3.11 -m venv .venv && . .venv/bin/activate
-pip install -r requirements.lock
-make check
+git clone https://github.com/whxythr/genesis.git && cd genesis
 ```
 
-Windows без `make`:
+Windows (PowerShell):
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\python -m pip install -r requirements.lock
 powershell -ExecutionPolicy Bypass -File .\scripts\check.ps1
 ```
+
+Linux / macOS:
+
+```bash
+sh scripts/check.sh
+```
+
+Или через `make`: `make setup` один раз, затем `make check` (Makefile сам берёт `.venv`, если он есть).
+
+### Если что-то не запускается
+
+| Сообщение | Причина и решение |
+| --- | --- |
+| `pytest is not installed for …` / `No module named pytest` | проверку запустили системным Python, а зависимости стоят в `.venv`. Запускайте `scripts/check.ps1` / `scripts/check.sh` или `.venv` явно: `.\.venv\Scripts\python -m audit_env check` (Windows), `.venv/bin/python -m audit_env check` (Linux/macOS) |
+| `No module named audit_env` | не задан путь к коду: `$env:PYTHONPATH="src"` (PowerShell) или `export PYTHONPATH=src` (bash). Скрипты проверки задают его сами |
+| `Python 3.11+ not found` | установите Python 3.11 или новее с python.org и повторите |
+| «выполнение сценариев отключено» | запускайте именно так: `powershell -ExecutionPolicy Bypass -File .\scripts\check.ps1` |
+| `pip install failed` | первый запуск ставит pytest из интернета; дальше всё работает без сети |
 
 ### Что делает `make check`
 
@@ -473,6 +490,8 @@ env.close()
 | `make check` | всё из раздела 1 |
 | `make test` | только pytest |
 | `make demo` | демо из раздела 10 |
+| `python scripts/demo_judge.py` | пошаговый показ контракта жюри: закрытый режим, ошибки, submit, оценка, атака, нарушение лимитов |
+| `make setup` | создать `.venv` и поставить зависимости (Linux/macOS) |
 | `make generate` / `make validate` | пересоздать / проверить train и dev |
 | `make verify` или `python -m audit_env verify <каталог> ...` | независимая проверка каталогов эпизодов только по файлам, в том числе копий жюри |
 | `make baselines` | 4 политики: train открыто, dev закрыто |
@@ -502,7 +521,7 @@ episodes/      открытые файлы 10 train + 10 dev
 grader_data/   truth.json и provenance.json к ним
 trajectories/  траектории, сводки и журналы оценщика базовых политик
 tests/         293 теста
-scripts/       check.ps1, failure_analysis.py, check_py311.py
+scripts/       check.ps1 + check.sh (одна команда с авто-установкой), demo_judge.py (демо контракта жюри), failure_analysis.py, check_py311.py
 docs/          DESIGN.md, PLAN.md, case.pdf, checks.pdf
 ```
 
