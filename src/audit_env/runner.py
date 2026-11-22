@@ -48,12 +48,17 @@ def run_episode(env: AuditEnv, policy: Policy, seed: int | None = None, config: 
         "policy": policy.name,
         "seed": seed,
         "steps": rows[-1]["step"],
-        "return": round(total, 6),
+        # what the policy itself received (sum of step rewards): the terminal reward in
+        # train, always 0 in the closed eval mode
+        "policy_return": total,
         "time_s": round(time.monotonic() - t0, 3),
         "outcome": "submitted" if terminated else "truncated",
     }
     if env.mode == "train":
-        summary.update(reward=info["reward"], **info["metrics"], invalid_reason=info["invalid_reason"])
+        # episode return = the terminal reward (case §05); in eval it is filled in from the
+        # grader report after the session is finalized
+        summary.update(reward=info["reward"], **{"return": info["reward"]}, **info["metrics"],
+                       invalid_reason=info["invalid_reason"])
     return rows, summary
 
 
@@ -68,7 +73,7 @@ def format_table(summaries: list[dict]) -> str:
     by: dict[str, list[dict]] = {}
     for s in summaries:
         by.setdefault(s["policy"], []).append(s)
-    cols = ["policy", "episodes", "P", "R", "F1", "reward", "steps", "time_s", "max_time_s"]
+    cols = ["policy", "episodes", "P", "R", "F1", "return", "steps", "time_s", "max_time_s"]
     lines = ["  ".join(f"{c:>15}" for c in cols)]
     for name in sorted(by):
         ss = by[name]

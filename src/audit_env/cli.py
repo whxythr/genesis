@@ -150,6 +150,7 @@ def cmd_baselines(split: str, mode: str = "train", quiet: bool = False) -> list[
                     raise RuntimeError("grader report does not match the run")
                 for s, r in zip(pol_summaries, results):
                     s.update(reward=r["reward"], invalid_reason=r["invalid_reason"], **r["metrics"])
+                    s["return"] = r["reward"]
         finally:
             env.close()
         all_rows += rows_all
